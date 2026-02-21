@@ -92,6 +92,14 @@
 
 ---
 
+## Phase 5 — Config GUI Overhaul
+
+- [x] Wave 1: Fix layout engine (overflow, startY, spacing, header)
+- [x] Wave 2: Restructure pages (redistribute settings, max ~10/page, section labels)
+- [x] Wave 3: Visual polish (two-column layout, tighter header, button sizing)
+
+---
+
 ## Backlog / Ideas Parking Lot
 
 - [x] Optional compact HUD mode.

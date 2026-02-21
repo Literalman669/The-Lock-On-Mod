@@ -19,22 +19,27 @@ import java.util.List;
 public class GuiTargetingConfig extends GuiScreen {
     private final GuiScreen parentScreen;
     private int currentPage = 0;
-    private final int totalPages = 5; // Added sound tweaking + damage numbers pages
+    private final int totalPages = 6;
+    private int sectionLabelY1 = -1;
+    private int sectionLabelY2 = -1;
+    private String sectionLabel1 = null;
+    private String sectionLabel2 = null;
 
-    private static final String INTERACTION_HINT = "§7LMB: Increase/Toggle  §8|  §7RMB: Decrease  §8|  §7Shift: Fine Tune";
     private static final String[] PAGE_TITLES = {
-        "§6Targeting & Visual Settings",
-        "§6Camera Settings",
-        "§6Entity Filtering & Basic Audio",
-        "§6Advanced Sound Tweaking",
-        "§6Damage Numbers Configuration"
+        "§6Targeting",
+        "§6HUD & Visuals",
+        "§6Camera",
+        "§6Entity Filtering & Audio",
+        "§6Advanced Sound",
+        "§6Damage Numbers"
     };
     private static final String[] PAGE_DESCRIPTIONS = {
-        "§7Core lock-on behavior and HUD presentation",
-        "§7Camera lock style, smoothness, and compatibility",
-        "§7What can be targeted and essential audio controls",
-        "§7Theme, volume, pitch, and variety tuning",
-        "§7Floating damage text visuals and color behavior"
+        "§7Lock-on range, angle, and target priority",
+        "§7HUD elements, reticle, and display modes",
+        "§7Camera feel, smoothness, and compatibility",
+        "§7What can be targeted and audio controls",
+        "§7Sound theme, volume, and pitch tuning",
+        "§7Floating damage text visuals and colors"
     };
 
     // Button IDs
@@ -124,29 +129,18 @@ public class GuiTargetingConfig extends GuiScreen {
     public void initGui() {
         this.buttonList.clear();
 
-        // Calculate GUI scale factor for proper scaling
-        int scaleFactor = this.mc.gameSettings.guiScale;
-        if (scaleFactor == 0) scaleFactor = 1000;
-        int scaledWidth = this.mc.displayWidth / scaleFactor;
-        int scaledHeight = this.mc.displayHeight / scaleFactor;
+        int centerX = this.width / 2;
+        int startY = 52;
+        int buttonWidth = Math.min(240, this.width - 60);
+        int buttonHeight = 22;
+        int navY = this.height - 28;
 
-        // Use the smaller of actual screen dimensions or scaled dimensions for safety
-        int effectiveWidth = Math.min(this.width, scaledWidth);
-        int effectiveHeight = Math.min(this.height, scaledHeight);
-
-        int centerX = effectiveWidth / 2;
-        int startY = Math.max(74, effectiveHeight / 9);
-        int buttonWidth = Math.min(220, effectiveWidth - 40);
-        int buttonHeight = 20;
-        int spacing = Math.max(20, Math.min(24, (effectiveHeight - startY - 90) / 14));
-
-        // Page navigation buttons - positioned dynamically
-        int buttonY = effectiveHeight - 25;
+        // Page navigation buttons
         if (currentPage > 0) {
-            this.buttonList.add(new GuiButton(PREV_PAGE_BUTTON, centerX - 210, buttonY, 100, 20, "< Previous"));
+            this.buttonList.add(new GuiButton(PREV_PAGE_BUTTON, centerX - 155, navY, 90, 20, "< Previous"));
         }
         if (currentPage < totalPages - 1) {
-            this.buttonList.add(new GuiButton(NEXT_PAGE_BUTTON, centerX + 110, buttonY, 100, 20, "Next >"));
+            this.buttonList.add(new GuiButton(NEXT_PAGE_BUTTON, centerX + 65, navY, 90, 20, "Next >"));
         }
 
         // Control buttons
@@ -154,272 +148,284 @@ public class GuiTargetingConfig extends GuiScreen {
         if (doneLabel == null || doneLabel.isEmpty()) {
             doneLabel = "Done";
         }
-        this.buttonList.add(new GuiButton(DONE_BUTTON, centerX - 100, buttonY, 95, 20, doneLabel));
-        this.buttonList.add(new GuiButton(RESET_BUTTON, centerX + 5, buttonY, 95, 20, "Reset"));
+        this.buttonList.add(new GuiButton(DONE_BUTTON, centerX - 60, navY, 55, 20, doneLabel));
+        this.buttonList.add(new GuiButton(RESET_BUTTON, centerX + 5, navY, 55, 20, "Reset"));
 
         int currentY = startY;
+        sectionLabelY1 = -1;
+        sectionLabelY2 = -1;
+        sectionLabel1 = null;
+        sectionLabel2 = null;
 
         switch (currentPage) {
-            case 0: // Targeting & Visual Settings
+            case 0: // Targeting
                 addValueButton(TARGETING_RANGE_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Targeting Range", (float)TargetingConfig.targetingRange, 5.0f, 50.0f, 1.0f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(MAX_TRACKING_DISTANCE_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Max Tracking Distance", (float)TargetingConfig.maxTrackingDistance, 5.0f, 100.0f, 5.0f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(DETECTION_ANGLE_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Detection Angle", (float)TargetingConfig.maxAngle, 15.0f, 180.0f, 5.0f);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(REQUIRE_LOS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Require Line of Sight", TargetingConfig.requireLineOfSight);
-                currentY += spacing;
+                currentY += 24;
 
                 addTargetPriorityButton(TARGET_PRIORITY_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         TargetingConfig.targetPriority);
-                currentY += spacing;
+                break;
 
+            case 1: // HUD & Visuals
                 addToggleButton(SHOW_RETICLE_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Show Reticle", TargetingConfig.showReticle);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(SHOW_HEALTH_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Show Health Bar", TargetingConfig.showHealthBar);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(SHOW_DISTANCE_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Show Distance", TargetingConfig.showDistance);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(SHOW_NAME_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Show Target Name", TargetingConfig.showTargetName);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(RETICLE_SCALE_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Reticle Scale", TargetingConfig.reticleScale, 0.5f, 3.0f, 0.1f);
-                currentY += spacing + 10;
+                currentY += 24 + 10;
+                sectionLabel1 = "§8— Combat Info —";
+                sectionLabelY1 = currentY - 6;
+                currentY += 4;
 
-                // Enhanced Visual Feedback section
                 addToggleButton(SHOW_DAMAGE_PREDICTION_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Show Damage Prediction", TargetingConfig.showDamagePrediction);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(SHOW_HITS_TO_KILL_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Show Hits to Kill", TargetingConfig.showHitsToKill);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(SHOW_VULNERABILITIES_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Show Vulnerabilities", TargetingConfig.showVulnerabilities);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(HIGHLIGHT_LETHAL_TARGETS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Highlight Lethal Targets", TargetingConfig.highlightLethalTargets);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(DAMAGE_PREDICTION_SCALE_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Damage Text Scale", TargetingConfig.damagePredictionScale, 0.5f, 2.0f, 0.1f);
-                currentY += spacing + 10;
+                currentY += 24 + 10;
+                sectionLabel2 = "§8— Display Modes —";
+                sectionLabelY2 = currentY - 6;
+                currentY += 4;
 
                 addToggleButton(COMPACT_HUD_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Compact HUD Mode", TargetingConfig.compactHudMode);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(SOFT_AIM_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Soft Aim Indicator", TargetingConfig.softAimIndicator);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(TARGET_HISTORY_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target History Ring", TargetingConfig.targetHistoryEnabled);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(BOSS_STYLE_PANEL_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Boss-Style Panel", TargetingConfig.bossStylePanel);
                 break;
 
-            case 1: // Camera Settings
+            case 2: // Camera
                 addToggleButton(ENABLE_CAMERA_LOCKON_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Enable Camera Lock-On", TargetingConfig.enableCameraLockOn);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(CAMERA_SMOOTHNESS_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Camera Smoothness", TargetingConfig.cameraSmoothness, 0.01f, 1.0f, 0.05f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(MAX_PITCH_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Max Pitch", TargetingConfig.maxPitchAdjustment, 0.0f, 90.0f, 5.0f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(MAX_YAW_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Max Yaw", TargetingConfig.maxYawAdjustment, 0.0f, 180.0f, 10.0f);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(AUTO_THIRD_PERSON_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Auto Third Person", TargetingConfig.autoThirdPerson);
-                currentY += spacing + 10;
+                currentY += 24 + 10;
 
                 addBtpModeButton(BTP_MODE_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "BTP Mode", TargetingConfig.btpCompatibilityMode);
-                currentY += spacing;
+                currentY += 24;
 
                 if ("gentle".equals(TargetingConfig.btpCompatibilityMode)) {
                     addValueButton(BTP_INTENSITY_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                             "BTP Camera Intensity", TargetingConfig.btpCameraIntensity, 0.0f, 1.0f, 0.05f);
                 }
-                currentY += spacing;
+                currentY += 24;
 
                 addCameraPresetButton(CAMERA_PRESET_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         TargetingConfig.lockOnPreset);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(CAMERA_FOCUS_OFFSET_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Focus Y Offset", TargetingConfig.cameraFocusYOffset, -1.0f, 1.0f, 0.1f);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(DEBUG_COMPAT_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Debug Compatibility Log", TargetingConfig.debugCompatibility);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(PER_MODE_SMOOTHING_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Gentler 1st-Person Smoothing", TargetingConfig.perModeSmoothingEnabled);
                 break;
 
-            case 2: // Entity Filtering & Basic Audio
+            case 3: // Entity Filtering & Audio
                 addToggleButton(TARGET_HOSTILES_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Hostile Mobs", TargetingConfig.targetHostileMobs);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(TARGET_NEUTRALS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Neutral Mobs", TargetingConfig.targetNeutralMobs);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(TARGET_PASSIVES_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Passive Mobs", TargetingConfig.targetPassiveMobs);
-                currentY += spacing + 10;
+                currentY += 24 + 10;
+                sectionLabel1 = "§8— Audio —";
+                sectionLabelY1 = currentY - 6;
+                currentY += 4;
 
                 addToggleButton(ENABLE_SOUNDS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Enable Sounds", TargetingConfig.enableSounds);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(SOUND_VOLUME_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Master Sound Volume", TargetingConfig.soundVolume, 0.0f, 1.0f, 0.05f);
-                currentY += spacing + 10;
+                currentY += 24 + 10;
 
                 // Basic sound toggle controls
                 addToggleButton(ENABLE_TARGET_LOCK_SOUND_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Lock Sound", TargetingConfig.enableTargetLockSound);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(ENABLE_TARGET_SWITCH_SOUND_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Switch Sound", TargetingConfig.enableTargetSwitchSound);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(ENABLE_LETHAL_TARGET_SOUND_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Lethal Target Sound", TargetingConfig.enableLethalTargetSound);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(ENABLE_TARGET_LOST_SOUND_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Lost Sound", TargetingConfig.enableTargetLostSound);
-                currentY += spacing + 10;
+                currentY += 24 + 10;
 
                 addValueButton(UPDATE_FREQUENCY_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Update Frequency", (float)TargetingConfig.updateFrequency, 1.0f, 20.0f, 1.0f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(VALIDATION_INTERVAL_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Validation Interval", (float)TargetingConfig.validationInterval, 1.0f, 60.0f, 1.0f);
                 break;
 
-            case 3: // Advanced Sound Tweaking
-                // Sound Theme Selection
+            case 4: // Advanced Sound
                 addSoundThemeButton(SOUND_THEME_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Sound Theme", TargetingConfig.soundTheme);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(ENABLE_SOUND_VARIETY_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Sound Variety", TargetingConfig.enableSoundVariety);
-                currentY += spacing + 10;
+                currentY += 24 + 10;
 
                 // Volume Controls
                 addValueButton(TARGET_LOCK_VOLUME_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Lock Volume", TargetingConfig.targetLockVolume, 0.0f, 1.0f, 0.05f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(TARGET_SWITCH_VOLUME_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Switch Volume", TargetingConfig.targetSwitchVolume, 0.0f, 1.0f, 0.05f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(LETHAL_TARGET_VOLUME_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Lethal Target Volume", TargetingConfig.lethalTargetVolume, 0.0f, 1.0f, 0.05f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(TARGET_LOST_VOLUME_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Lost Volume", TargetingConfig.targetLostVolume, 0.0f, 1.0f, 0.05f);
-                currentY += spacing + 10;
+                currentY += 24 + 10;
 
                 // Pitch Controls
                 addValueButton(TARGET_LOCK_PITCH_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Lock Pitch", TargetingConfig.targetLockPitch, 0.5f, 2.0f, 0.1f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(TARGET_SWITCH_PITCH_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Switch Pitch", TargetingConfig.targetSwitchPitch, 0.5f, 2.0f, 0.1f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(LETHAL_TARGET_PITCH_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Lethal Target Pitch", TargetingConfig.lethalTargetPitch, 0.5f, 2.0f, 0.1f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(TARGET_LOST_PITCH_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Lost Pitch", TargetingConfig.targetLostPitch, 0.5f, 2.0f, 0.1f);
                 break;
 
-            case 4: // Damage Numbers Configuration
+            case 5: // Damage Numbers
                 addToggleButton(ENABLE_DAMAGE_NUMBERS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Enable Damage Numbers", TargetingConfig.enableDamageNumbers);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(DAMAGE_NUMBERS_SCALE_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Damage Numbers Scale", TargetingConfig.damageNumbersScale, 0.5f, 3.0f, 0.1f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(DAMAGE_NUMBERS_DURATION_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Duration (ticks)", (float)TargetingConfig.damageNumbersDuration, 20.0f, 200.0f, 10.0f);
-                currentY += spacing;
+                currentY += 24;
 
                 addValueButton(DAMAGE_NUMBERS_OFFSET_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Vertical Offset", TargetingConfig.damageNumbersOffset, 0.0f, 2.0f, 0.1f);
-                currentY += spacing + 10;
+                currentY += 24 + 10;
 
                 addToggleButton(DAMAGE_NUMBERS_CRITS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Critical Hit Effects", TargetingConfig.damageNumbersCrits);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(DAMAGE_NUMBERS_COLORS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Colored Damage Numbers", TargetingConfig.damageNumbersColors);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(DAMAGE_NUMBERS_FADEOUT_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Fade-Out Animation", TargetingConfig.damageNumbersFadeOut);
-                currentY += spacing;
+                currentY += 24;
 
                 addDamageMotionButton(DAMAGE_NUMBERS_MOTION_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         TargetingConfig.damageNumbersMotion);
-                currentY += spacing;
+                currentY += 24;
 
                 addToggleButton(CRIT_EMPHASIS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Crit Pop Emphasis", TargetingConfig.critEmphasis);
-                currentY += spacing + 10;
+                currentY += 24 + 10;
 
                 // Color configuration buttons (simplified for now)
                 addColorButton(DAMAGE_NUMBERS_COLOR_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Default Color", TargetingConfig.damageNumbersColor);
-                currentY += spacing;
+                currentY += 24;
 
                 addColorButton(CRITICAL_DAMAGE_COLOR_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Critical Color", TargetingConfig.criticalDamageColor);
-                currentY += spacing;
+                currentY += 24;
 
                 addColorButton(LETHAL_DAMAGE_COLOR_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Lethal Color", TargetingConfig.lethalDamageColor);
@@ -1096,30 +1102,33 @@ public class GuiTargetingConfig extends GuiScreen {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         this.drawDefaultBackground();
 
-        // Draw title
-        String title = "Zelda Targeting Configuration";
-        this.drawCenteredString(this.fontRenderer, title, this.width / 2, 20, 0xFFFFFF);
-
-        // Draw dot-based page indicator — shows all pages and current position at a glance
-        StringBuilder pageDotsBuf = new StringBuilder();
-        for (int i = 0; i < totalPages; i++) {
-            pageDotsBuf.append(i == currentPage ? "\u00a7f\u25cf " : "\u00a77\u25cb ");
-        }
-        @SuppressWarnings("null")
-        String pageDotsStr = pageDotsBuf.toString().trim();
-        this.drawCenteredString(this.fontRenderer, pageDotsStr, this.width / 2, 35, 0xFFFFFF);
-
-        // Draw Better Third Person compatibility info if detected
-        if (ZeldaTargetingMod.isBetterThirdPersonLoaded()) {
-            String btpMessage = "§eBetter Third Person detected - Mode: " + TargetingConfig.btpCompatibilityMode.toUpperCase();
-            this.drawCenteredString(this.fontRenderer, btpMessage, this.width / 2, 45, 0xFFAA00);
-        }
-
-        // Draw section headers and interaction hints
         int centerX = this.width / 2;
-        this.drawCenteredString(this.fontRenderer, getCurrentPageTitle(), centerX, 55, 0xFFAA00);
-        this.drawCenteredString(this.fontRenderer, getCurrentPageDescription(), centerX, 66, 0xB8BDC2);
-        this.drawCenteredString(this.fontRenderer, INTERACTION_HINT, centerX, 76, 0x9EA4AA);
+
+        // Title + page dots on one line
+        StringBuilder dotsBuf = new StringBuilder("Zelda Targeting  ");
+        for (int i = 0; i < totalPages; i++) {
+            dotsBuf.append(i == currentPage ? "\u00a7f\u25cf" : "\u00a78\u25cb");
+            if (i < totalPages - 1) dotsBuf.append("\u00a7r ");
+        }
+        this.drawCenteredString(this.fontRenderer, dotsBuf.toString(), centerX, 10, 0xFFFFFF);
+
+        // Page title and description
+        this.drawCenteredString(this.fontRenderer, getCurrentPageTitle(), centerX, 24, 0xFFAA00);
+        this.drawCenteredString(this.fontRenderer, getCurrentPageDescription(), centerX, 35, 0xAAAAAA);
+
+        // BTP notice if relevant
+        if (ZeldaTargetingMod.isBetterThirdPersonLoaded()) {
+            String btpMsg = "\u00a7eBTP detected \u00a78\u2014\u00a7e " + TargetingConfig.btpCompatibilityMode.toUpperCase();
+            this.drawCenteredString(this.fontRenderer, btpMsg, centerX, 44, 0xFFAA00);
+        }
+
+        // Section divider labels
+        if (sectionLabel1 != null && sectionLabelY1 >= 0) {
+            this.drawCenteredString(this.fontRenderer, sectionLabel1, centerX, sectionLabelY1, 0x888888);
+        }
+        if (sectionLabel2 != null && sectionLabelY2 >= 0) {
+            this.drawCenteredString(this.fontRenderer, sectionLabel2, centerX, sectionLabelY2, 0x888888);
+        }
 
         super.drawScreen(mouseX, mouseY, partialTicks);
         drawButtonTooltip(mouseX, mouseY);
