@@ -111,6 +111,10 @@ public class GuiTargetingConfig extends GuiScreen {
     private static final int PER_MODE_SMOOTHING_TOGGLE = 156;
     private static final int DAMAGE_NUMBERS_MOTION_BUTTON = 157;
     private static final int CRIT_EMPHASIS_TOGGLE = 158;
+    private static final int COMPACT_HUD_TOGGLE = 159;
+    private static final int SOFT_AIM_TOGGLE = 160;
+    private static final int TARGET_HISTORY_TOGGLE = 161;
+    private static final int BOSS_STYLE_PANEL_TOGGLE = 162;
 
     public GuiTargetingConfig(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -216,6 +220,22 @@ public class GuiTargetingConfig extends GuiScreen {
 
                 addValueButton(DAMAGE_PREDICTION_SCALE_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Damage Text Scale", TargetingConfig.damagePredictionScale, 0.5f, 2.0f, 0.1f);
+                currentY += spacing + 10;
+
+                addToggleButton(COMPACT_HUD_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "Compact HUD Mode", TargetingConfig.compactHudMode);
+                currentY += spacing;
+
+                addToggleButton(SOFT_AIM_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "Soft Aim Indicator", TargetingConfig.softAimIndicator);
+                currentY += spacing;
+
+                addToggleButton(TARGET_HISTORY_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "Target History Ring", TargetingConfig.targetHistoryEnabled);
+                currentY += spacing;
+
+                addToggleButton(BOSS_STYLE_PANEL_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "Boss-Style Panel", TargetingConfig.bossStylePanel);
                 break;
 
             case 1: // Camera Settings
@@ -817,6 +837,22 @@ public class GuiTargetingConfig extends GuiScreen {
             case CRIT_EMPHASIS_TOGGLE:
                 TargetingConfig.critEmphasis = !TargetingConfig.critEmphasis;
                 button.displayString = formatToggleText("Crit Pop Emphasis", TargetingConfig.critEmphasis);
+                break;
+            case COMPACT_HUD_TOGGLE:
+                TargetingConfig.compactHudMode = !TargetingConfig.compactHudMode;
+                button.displayString = formatToggleText("Compact HUD Mode", TargetingConfig.compactHudMode);
+                break;
+            case SOFT_AIM_TOGGLE:
+                TargetingConfig.softAimIndicator = !TargetingConfig.softAimIndicator;
+                button.displayString = formatToggleText("Soft Aim Indicator", TargetingConfig.softAimIndicator);
+                break;
+            case TARGET_HISTORY_TOGGLE:
+                TargetingConfig.targetHistoryEnabled = !TargetingConfig.targetHistoryEnabled;
+                button.displayString = formatToggleText("Target History Ring", TargetingConfig.targetHistoryEnabled);
+                break;
+            case BOSS_STYLE_PANEL_TOGGLE:
+                TargetingConfig.bossStylePanel = !TargetingConfig.bossStylePanel;
+                button.displayString = formatToggleText("Boss-Style Panel", TargetingConfig.bossStylePanel);
                 break;
             case DAMAGE_NUMBERS_COLOR_BUTTON:
                 cycleDamageNumberColor("default");

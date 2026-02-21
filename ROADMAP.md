@@ -94,10 +94,10 @@
 
 ## Backlog / Ideas Parking Lot
 
-- [ ] Optional compact HUD mode.
-- [ ] Optional lock-on soft aim indicator.
-- [ ] Optional target history ring / recently targeted marker.
-- [ ] Optional boss-style target panel skin.
+- [x] Optional compact HUD mode.
+- [x] Optional lock-on soft aim indicator.
+- [x] Optional target history ring / recently targeted marker.
+- [x] Optional boss-style target panel skin.
 
 ---
 

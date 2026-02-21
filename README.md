@@ -61,7 +61,7 @@ Transform your Minecraft combat with modern targeting mechanics, complete audio 
 
 ## 📝 Changelog
 
-### Version 1.1.2 - Polish & QoL Pass (Current)
+### Version 1.2.0 - Feature Expansion (Current)
 
 **Targeting**
 - 4 target priority modes: Nearest, Health, Threat, Angle
@@ -93,9 +93,18 @@ Transform your Minecraft combat with modern targeting mechanics, complete audio 
 - Eliminated per-frame `ArrayList` allocation in `TargetRenderer` HUD
 - Eliminated per-tick `ArrayList` allocation in `EntityDetector` target search
 
+**HUD Modes**
+- Compact HUD mode — name + health bar only, no stat lines
+- Boss-style panel — wide centered bar at screen bottom for targets ≥100 HP
+- Soft aim indicator — fading crosshair nudge toward locked target when off-axis
+- Target history ring — faint world-space ring above last 3 locked targets
+
+**Bug Fixes**
+- Fixed target cycle jank: 250ms cooldown + stable bearing sort tiebreaker
+
 ---
 
-### Version 1.1.2 - Enhanced Audio & Visual System (Previous)
+### Version 1.1.2 - Polish & QoL Pass (Previous)
 - **Complete Target Lock Sound Effects System** - Professional audio feedback for all targeting actions
 - **Individual Sound Controls** - Separate enable/disable and volume controls for each sound type
 - **Smart Audio Logic** - Context-aware sound selection (lethal targets get special dramatic audio)

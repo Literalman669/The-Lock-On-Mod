@@ -16,7 +16,7 @@ import org.apache.logging.log4j.Logger;
 public class ZeldaTargetingMod {
     public static final String MODID = "zeldatargeting";
     public static final String NAME = "Zelda Targeting";
-    public static final String VERSION = "1.1.2";
+    public static final String VERSION = "1.2.0";
     
     @Mod.Instance(MODID)
     public static ZeldaTargetingMod instance;
@@ -37,8 +37,8 @@ public class ZeldaTargetingMod {
         logger = event.getModLog();
         logger.info("Zelda Targeting Mod - Pre-Initialization");
         
-        // Check for Better Third Person compatibility
-        betterThirdPersonLoaded = Loader.isModLoaded("betterthanperson");
+// Check for Better Third Person compatibility
+betterThirdPersonLoaded = Loader.isModLoaded("betterthirdperson");
         if (betterThirdPersonLoaded) {
             logger.info("Better Third Person detected - Camera lock-on will be disabled to prevent conflicts");
         }

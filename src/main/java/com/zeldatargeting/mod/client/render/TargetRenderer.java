@@ -41,10 +41,18 @@ public class TargetRenderer {
     private static final int HUD_ACCENT_WARNING = 0xFFFFA340;
     private static final int HUD_ACCENT_LETHAL = 0xFFFF4B4B;
 
+    private static final int BOSS_BAR_WIDTH = 200;
+    private static final int BOSS_BAR_HEIGHT = 8;
+    private static final int BOSS_HP_THRESHOLD = 100;
+
     private final Minecraft mc;
     private long animationTime = 0;
     private final List<String> statLines = new ArrayList<>(6);
     private final List<Integer> statColors = new ArrayList<>(6);
+
+    // Target history ring — stores up to 3 recently locked entities
+    private final java.util.ArrayDeque<Entity> targetHistory = new java.util.ArrayDeque<>(4);
+    private Entity lastHistoryTarget = null;
 
     public TargetRenderer() {
         this.mc = Minecraft.getMinecraft();
@@ -69,13 +77,25 @@ public class TargetRenderer {
 
         animationTime = System.currentTimeMillis();
 
+        // Update target history
+        if (TargetingConfig.targetHistoryEnabled && target != lastHistoryTarget) {
+            if (lastHistoryTarget != null) {
+                targetHistory.remove(lastHistoryTarget);
+                targetHistory.addFirst(lastHistoryTarget);
+                while (targetHistory.size() > 3) targetHistory.removeLast();
+            }
+            lastHistoryTarget = target;
+        }
+
         if (TargetingConfig.showReticle) {
-            // Render 3D reticle around target
             render3DReticle(target);
         }
 
-        // Render 2D HUD elements
         render2DHUD(target, event.getResolution());
+
+        if (TargetingConfig.softAimIndicator) {
+            renderSoftAimIndicator(target, event.getResolution());
+        }
     }
 
     @SubscribeEvent
@@ -85,10 +105,17 @@ public class TargetRenderer {
             return;
         }
 
-        // Render red indicator above current target ONLY when locked on
         Entity currentTarget = manager.getCurrentTarget();
         if (currentTarget != null && manager.isActive() && TargetingConfig.showReticle) {
             renderRedIndicator(currentTarget, event.getPartialTicks());
+        }
+        // Render faint history rings above recently targeted entities
+        if (TargetingConfig.targetHistoryEnabled) {
+            for (Entity hist : targetHistory) {
+                if (hist != null && hist.isEntityAlive()) {
+                    renderHistoryRing(hist, event.getPartialTicks());
+                }
+            }
         }
     }
 
@@ -265,8 +292,20 @@ public class TargetRenderer {
         boolean isLethal = TargetingConfig.highlightLethalTargets && hitsToKill == 1;
         int accentColor = isLethal ? HUD_ACCENT_LETHAL : (hitsToKill > 1 && hitsToKill <= 3 ? HUD_ACCENT_WARNING : HUD_ACCENT_DEFAULT);
 
+        // Boss-style panel overrides normal HUD for high-HP targets
+        if (TargetingConfig.bossStylePanel && isLiving && maxHealth >= BOSS_HP_THRESHOLD) {
+            renderBossPanel(target, screenWidth, screenHeight, health, maxHealth, healthRatio, isLethal, accentColor);
+            return;
+        }
+
         statLines.clear();
         statColors.clear();
+
+        // Compact mode: skip all stat lines
+        if (TargetingConfig.compactHudMode) {
+            renderCompactHud(target, screenWidth, "Locked Target", isLiving, health, maxHealth, healthRatio, isLethal, accentColor);
+            return;
+        }
 
         if (TargetingConfig.showDamagePrediction && isLiving) {
             if (predictedDamage <= 0.0f) {
@@ -345,7 +384,7 @@ public class TargetRenderer {
         if (isLiving && TargetingConfig.showHealthBar) {
             int barX = textX;
             int barY = currentY;
-            int fillWidth = (int) (HUD_BAR_WIDTH * Math.max(0.0f, Math.min(1.0f, healthRatio)));
+            int fillWidth = (int) (HUD_BAR_WIDTH * Math.max(0f, Math.min(1f, healthRatio)));
 
             Gui.drawRect(barX - 1, barY - 1, barX + HUD_BAR_WIDTH + 1, barY + 5, 0xAA000000);
             Gui.drawRect(barX, barY, barX + HUD_BAR_WIDTH, barY + 4, 0xFF2B2E33);
@@ -356,10 +395,9 @@ public class TargetRenderer {
             Gui.drawRect(barX, barY, barX + fillWidth, barY + 4, healthColor);
 
             // Low-health warning: pulsing red tint overlay below 25%
-            if (healthRatio <= 0.25f && healthRatio > 0.0f) {
+            if (healthRatio <= 0.25f && healthRatio > 0f) {
                 float pulse = 0.4f + 0.4f * (float) Math.abs(Math.sin(animationTime * 0.018));
-                int pulseAlpha = (int)(pulse * 180);
-                Gui.drawRect(barX, barY, barX + HUD_BAR_WIDTH, barY + 4, (pulseAlpha << 24) | 0xFF2020);
+                Gui.drawRect(barX, barY, barX + HUD_BAR_WIDTH, barY + 4, ((int)(pulse * 180) << 24) | 0xFF2020);
             }
 
             String healthText = String.format("HP %.1f/%.1f (%.0f%%)", health, maxHealth, healthRatio * 100.0f);
@@ -371,6 +409,168 @@ public class TargetRenderer {
             mc.fontRenderer.drawString(statLines.get(i), textX, currentY, statColors.get(i));
             currentY += HUD_LINE_HEIGHT + 2;
         }
+    }
+
+    @SuppressWarnings("null")
+    private void renderCompactHud(Entity target, int screenWidth, String titleText,
+            boolean isLiving, float health, float maxHealth, float healthRatio,
+            boolean isLethal, int accentColor) {
+        int panelWidth = Math.max(HUD_MIN_WIDTH, Math.max(
+            mc.fontRenderer.getStringWidth(titleText),
+            isLiving && TargetingConfig.showHealthBar ? HUD_BAR_WIDTH : 0) + HUD_PADDING * 2);
+        int panelHeight = HUD_PADDING + HUD_TITLE_GAP
+            + (isLiving && TargetingConfig.showHealthBar ? HUD_HEALTH_BLOCK_HEIGHT : 0)
+            + HUD_PADDING - 2;
+
+        int panelX = Math.max(HUD_MARGIN, screenWidth - panelWidth - HUD_MARGIN);
+        int panelY = HUD_MARGIN;
+
+        Gui.drawRect(panelX + 1, panelY + 1, panelX + panelWidth + 1, panelY + panelHeight + 1, HUD_SHADOW_COLOR);
+        Gui.drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, HUD_BG_COLOR);
+        Gui.drawRect(panelX, panelY, panelX + panelWidth, panelY + HUD_ACCENT_HEIGHT, accentColor);
+
+        int textX = panelX + HUD_PADDING;
+        int currentY = panelY + HUD_PADDING;
+
+        int titleColor = isLethal
+            ? ((int)(220 + 35 * Math.sin(animationTime * 0.012)) << 16) | 0x004B4B
+            : HUD_TEXT_PRIMARY;
+        mc.fontRenderer.drawString(titleText, textX, currentY, titleColor);
+        currentY += HUD_TITLE_GAP;
+
+        if (isLiving && TargetingConfig.showHealthBar) {
+            int fillWidth = (int)(HUD_BAR_WIDTH * Math.max(0f, Math.min(1f, healthRatio)));
+            Gui.drawRect(textX - 1, currentY - 1, textX + HUD_BAR_WIDTH + 1, currentY + 5, 0xAA000000);
+            Gui.drawRect(textX, currentY, textX + HUD_BAR_WIDTH, currentY + 4, 0xFF2B2E33);
+            int healthColor = healthRatio > 0.75f ? 0xFF4CD964
+                : (healthRatio > 0.5f ? 0xFFB2E35D
+                : (healthRatio > 0.25f ? 0xFFFFC44D : 0xFFFF5A5A));
+            Gui.drawRect(textX, currentY, textX + fillWidth, currentY + 4, healthColor);
+            if (healthRatio <= 0.25f && healthRatio > 0f) {
+                float pulse = 0.4f + 0.4f * (float) Math.abs(Math.sin(animationTime * 0.018));
+                Gui.drawRect(textX, currentY, textX + HUD_BAR_WIDTH, currentY + 4, ((int)(pulse * 180) << 24) | 0xFF2020);
+            }
+        }
+    }
+
+    @SuppressWarnings("null")
+    private void renderBossPanel(Entity target, int screenWidth, int screenHeight,
+            float health, float maxHealth, float healthRatio,
+            boolean isLethal, int accentColor) {
+        String name = target.getName();
+        String titleText = name != null ? name : "Boss";
+        String hpText = String.format("%.0f / %.0f", health, maxHealth);
+
+        int panelWidth = BOSS_BAR_WIDTH + HUD_PADDING * 2;
+        int panelHeight = HUD_PADDING + HUD_TITLE_GAP + BOSS_BAR_HEIGHT + 6 + HUD_PADDING;
+        int panelX = (screenWidth - panelWidth) / 2;
+        int panelY = screenHeight - panelHeight - 22;
+
+        Gui.drawRect(panelX + 1, panelY + 1, panelX + panelWidth + 1, panelY + panelHeight + 1, HUD_SHADOW_COLOR);
+        Gui.drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, HUD_BG_COLOR);
+        Gui.drawRect(panelX, panelY, panelX + panelWidth, panelY + HUD_ACCENT_HEIGHT, accentColor);
+
+        int titleColor = isLethal
+            ? ((int)(220 + 35 * Math.sin(animationTime * 0.012)) << 16) | 0x004B4B
+            : HUD_TEXT_PRIMARY;
+        mc.fontRenderer.drawString(titleText, panelX + panelWidth / 2 - mc.fontRenderer.getStringWidth(titleText) / 2, panelY + HUD_PADDING, titleColor);
+
+        int barX = panelX + HUD_PADDING;
+        int barY = panelY + HUD_PADDING + HUD_TITLE_GAP;
+        int fillWidth = (int)(BOSS_BAR_WIDTH * Math.max(0f, Math.min(1f, healthRatio)));
+
+        Gui.drawRect(barX - 1, barY - 1, barX + BOSS_BAR_WIDTH + 1, barY + BOSS_BAR_HEIGHT + 1, 0xAA000000);
+        Gui.drawRect(barX, barY, barX + BOSS_BAR_WIDTH, barY + BOSS_BAR_HEIGHT, 0xFF2B2E33);
+
+        int healthColor = healthRatio > 0.75f ? 0xFF4CD964
+            : (healthRatio > 0.5f ? 0xFFB2E35D
+            : (healthRatio > 0.25f ? 0xFFFFC44D : 0xFFFF5A5A));
+        Gui.drawRect(barX, barY, barX + fillWidth, barY + BOSS_BAR_HEIGHT, healthColor);
+
+        if (healthRatio <= 0.25f && healthRatio > 0f) {
+            float pulse = 0.4f + 0.4f * (float) Math.abs(Math.sin(animationTime * 0.018));
+            Gui.drawRect(barX, barY, barX + BOSS_BAR_WIDTH, barY + BOSS_BAR_HEIGHT, ((int)(pulse * 180) << 24) | 0xFF2020);
+        }
+
+        mc.fontRenderer.drawString(hpText, panelX + panelWidth / 2 - mc.fontRenderer.getStringWidth(hpText) / 2, barY + BOSS_BAR_HEIGHT + 2, HUD_TEXT_SECONDARY);
+    }
+
+    @SuppressWarnings("null")
+    private void renderSoftAimIndicator(Entity target, ScaledResolution resolution) {
+        if (mc.player == null || mc.getRenderViewEntity() == null) return;
+
+        int cx = resolution.getScaledWidth() / 2;
+        int cy = resolution.getScaledHeight() / 2;
+
+        // Project target to screen-space direction from crosshair
+        net.minecraft.util.math.Vec3d look = mc.player.getLookVec();
+        double dx = target.posX - mc.player.posX;
+        double dy = (target.posY + target.height * 0.5) - (mc.player.posY + mc.player.getEyeHeight());
+        double dz = target.posZ - mc.player.posZ;
+        double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 0.001) return;
+        dx /= len; dy /= len; dz /= len;
+
+        // Dot product — how aligned is the look direction with the target
+        double dot = look.x * dx + look.y * dy + look.z * dz;
+        if (dot < 0.2) return; // Target is behind or too far off-axis
+
+        // Cross product to get left/right and up/down offset direction
+        double crossX = look.z * dy - look.y * dz;
+        double crossY = look.x * dz - look.z * dx;
+
+        // Scale nudge: max 12px, fades when nearly aligned
+        float nudge = (float) Math.min(12.0, (1.0 - dot) * 80.0);
+        int nx = cx + (int)(crossX * nudge * -1);
+        int ny = cy + (int)(crossY * nudge);
+
+        // Draw a small triangle arrow pointing from crosshair toward target
+        float alpha = (float) Math.min(1.0, (1.0 - dot) * 4.0);
+        int a = (int)(alpha * 200);
+        int color = (a << 24) | 0xFFFFAA;
+
+        // Simple 5px triangle pointing toward target offset
+        int size = 4;
+        Gui.drawRect(nx - 1, ny - size, nx + 1, ny + size, color);
+        Gui.drawRect(nx - size, ny - 1, nx + size, ny + 1, color);
+    }
+
+    @SuppressWarnings("null")
+    private void renderHistoryRing(Entity entity, float partialTicks) {
+        GlStateManager.pushMatrix();
+
+        double x = entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * partialTicks
+            - mc.getRenderManager().viewerPosX;
+        double y = entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * partialTicks
+            - mc.getRenderManager().viewerPosY + entity.height + 0.35;
+        double z = entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * partialTicks
+            - mc.getRenderManager().viewerPosZ;
+
+        GlStateManager.translate(x, y, z);
+        GlStateManager.rotate(-mc.getRenderManager().playerViewY, 0f, 1f, 0f);
+        GlStateManager.rotate(mc.getRenderManager().playerViewX, 1f, 0f, 0f);
+        GlStateManager.disableDepth();
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        GlStateManager.color(0.8f, 0.8f, 1.0f, 0.35f);
+
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder buffer = tessellator.getBuffer();
+        buffer.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION);
+        int segments = 20;
+        float r = 0.3f;
+        for (int i = 0; i < segments; i++) {
+            double angle = 2.0 * Math.PI * i / segments;
+            buffer.pos(Math.cos(angle) * r, Math.sin(angle) * r, 0).endVertex();
+        }
+        tessellator.draw();
+
+        GlStateManager.enableDepth();
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableBlend();
+        GlStateManager.color(1f, 1f, 1f, 1f);
+        GlStateManager.popMatrix();
     }
 
     @SuppressWarnings("null")

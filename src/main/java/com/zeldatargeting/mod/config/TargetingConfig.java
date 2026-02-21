@@ -24,6 +24,10 @@ public class TargetingConfig {
     public static boolean showTargetName = true;
     public static float reticleScale = 1.0f;
     public static int reticleColor = 0xFF0000; // Red
+    public static boolean compactHudMode = false; // Show name + health bar only
+    public static boolean softAimIndicator = false; // Subtle crosshair nudge toward target
+    public static boolean targetHistoryEnabled = false; // Track and mark recently targeted entities
+    public static boolean bossStylePanel = false; // Wide boss-bar style panel for high-HP targets
     
     // Camera Settings
     public static float cameraSmoothness = 0.4f;
@@ -123,6 +127,14 @@ public class TargetingConfig {
                 "Show health bar for targeted entities");
             showDistance = config.getBoolean("showDistance", "visual", showDistance,
                 "Show distance to target");
+            compactHudMode = config.getBoolean("compactHudMode", "visual", compactHudMode,
+                "Compact HUD: show only name and health bar");
+            softAimIndicator = config.getBoolean("softAimIndicator", "visual", softAimIndicator,
+                "Show a subtle crosshair nudge indicator toward the locked target");
+            targetHistoryEnabled = config.getBoolean("targetHistoryEnabled", "visual", targetHistoryEnabled,
+                "Track recently targeted entities and show a marker above them");
+            bossStylePanel = config.getBoolean("bossStylePanel", "visual", bossStylePanel,
+                "Use a wide boss-bar style HUD panel for high-HP targets (>100 HP)");
             showTargetName = config.getBoolean("showTargetName", "visual", showTargetName,
                 "Show name of targeted entity");
             reticleScale = config.getFloat("reticleScale", "visual", reticleScale, 0.5f, 3.0f,
@@ -274,6 +286,10 @@ public class TargetingConfig {
                 config.get("visual", "showDistance", showDistance).set(showDistance);
                 config.get("visual", "showTargetName", showTargetName).set(showTargetName);
                 config.get("visual", "reticleScale", reticleScale).set(reticleScale);
+                config.get("visual", "compactHudMode", compactHudMode).set(compactHudMode);
+                config.get("visual", "softAimIndicator", softAimIndicator).set(softAimIndicator);
+                config.get("visual", "targetHistoryEnabled", targetHistoryEnabled).set(targetHistoryEnabled);
+                config.get("visual", "bossStylePanel", bossStylePanel).set(bossStylePanel);
                 config.get("visual", "reticleColor", reticleColor).set(reticleColor);
                 
                 config.get("camera", "cameraSmoothness", cameraSmoothness).set(cameraSmoothness);
@@ -357,6 +373,10 @@ public class TargetingConfig {
         showDistance = true;
         showTargetName = true;
         reticleScale = 1.0f;
+        compactHudMode = false;
+        softAimIndicator = false;
+        targetHistoryEnabled = false;
+        bossStylePanel = false;
         reticleColor = 0xFF0000;
         
         cameraSmoothness = 0.4f;
