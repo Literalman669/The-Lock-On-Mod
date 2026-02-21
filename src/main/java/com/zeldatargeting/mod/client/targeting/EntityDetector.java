@@ -13,12 +13,14 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 public class EntityDetector {
     
     private final Minecraft mc;
+    private final TargetSelector targetSelector = new TargetSelector();
+    private final List<Entity> cachedValidTargets = new ArrayList<>(16);
+    private final List<Entity> cachedCyclingTargets = new ArrayList<>(16);
     
     public EntityDetector() {
         this.mc = Minecraft.getMinecraft();
@@ -34,12 +36,13 @@ public class EntityDetector {
         if (validTargets.isEmpty()) {
             return null;
         }
-        
-        // Sort by distance and return the nearest
-        validTargets.sort(Comparator.comparingDouble(entity -> 
-            player.getDistanceSq(entity)));
-        
-        return validTargets.get(0);
+        switch (TargetingConfig.targetPriority.toLowerCase()) {
+            case "health":   targetSelector.setPriority(TargetSelector.TargetPriority.HEALTH);       break;
+            case "threat":   targetSelector.setPriority(TargetSelector.TargetPriority.THREAT_LEVEL); break;
+            case "angle":    targetSelector.setPriority(TargetSelector.TargetPriority.ANGLE);        break;
+            default:         targetSelector.setPriority(TargetSelector.TargetPriority.DISTANCE);     break;
+        }
+        return targetSelector.selectBestTarget(validTargets, player);
     }
     
     public Entity findNextTarget(Entity currentTarget, boolean forward) {
@@ -48,17 +51,17 @@ public class EntityDetector {
             return null;
         }
         
-        List<Entity> validTargets = getValidTargetsInRange(player);
+        // Use all nearby valid entities (no angle filter) so targets behind the
+        // camera are still reachable, and sort by stable clockwise bearing so
+        // Q/E always sweep consistently regardless of camera rotation.
+        List<Entity> validTargets = getValidTargetsForCycling(player);
         if (validTargets.isEmpty()) {
             return null;
         }
         
-        // Sort by angle from player's look direction
-        Vec3d playerLook = player.getLookVec();
         validTargets.sort((e1, e2) -> {
-            double angle1 = getAngleToEntity(player, e1, playerLook);
-            double angle2 = getAngleToEntity(player, e2, playerLook);
-            return Double.compare(angle1, angle2);
+            int cmp = Double.compare(getHorizontalBearing(player, e1), getHorizontalBearing(player, e2));
+            return cmp != 0 ? cmp : Integer.compare(e1.getEntityId(), e2.getEntityId());
         });
         
         if (currentTarget == null) {
@@ -67,7 +70,7 @@ public class EntityDetector {
         
         int currentIndex = validTargets.indexOf(currentTarget);
         if (currentIndex == -1) {
-            return validTargets.get(0);
+            return findNearestTarget();
         }
         
         if (forward) {
@@ -77,8 +80,37 @@ public class EntityDetector {
         }
     }
     
+    /** Clockwise horizontal bearing [0,360) from player to entity; stable regardless of camera rotation. */
+    private double getHorizontalBearing(EntityPlayer player, Entity entity) {
+        double dx = entity.posX - player.posX;
+        double dz = entity.posZ - player.posZ;
+        double bearing = Math.toDegrees(Math.atan2(dx, -dz));
+        return bearing < 0 ? bearing + 360.0 : bearing;
+    }
+    
+    /** Returns all valid targets in range without the angle/FOV check, for use during cycling. */
+    private List<Entity> getValidTargetsForCycling(EntityPlayer player) {
+        List<Entity> validTargets = cachedCyclingTargets;
+        validTargets.clear();
+        double range = TargetingConfig.getTargetingRange();
+        double rangeSq = range * range;
+        AxisAlignedBB searchBox = new AxisAlignedBB(
+            player.posX - range, player.posY - range, player.posZ - range,
+            player.posX + range, player.posY + range, player.posZ + range);
+        for (Entity entity : player.world.getEntitiesWithinAABB(Entity.class, searchBox)) {
+            if (entity == player) continue;
+            if (!entity.isEntityAlive()) continue;
+            if (!(entity instanceof EntityLiving)) continue;
+            if (player.getDistanceSq(entity) > rangeSq) continue;
+            if (!isTargetableEntityType(entity)) continue;
+            validTargets.add(entity);
+        }
+        return validTargets;
+    }
+    
     private List<Entity> getValidTargetsInRange(EntityPlayer player) {
-        List<Entity> validTargets = new ArrayList<>();
+        List<Entity> validTargets = cachedValidTargets;
+        validTargets.clear();
         World world = player.world;
         
         // Create bounding box for search area

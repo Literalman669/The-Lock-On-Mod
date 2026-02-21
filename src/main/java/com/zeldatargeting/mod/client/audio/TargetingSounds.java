@@ -18,6 +18,13 @@ public class TargetingSounds {
     
     // Sound variety counter for cycling through different sounds
     private static int soundVarietyCounter = 0;
+
+    // Per-event cooldowns to prevent sound stacking on rapid retargeting (ms)
+    private static final long SOUND_COOLDOWN_MS = 150;
+    private static long lastLockSoundTime   = 0;
+    private static long lastSwitchSoundTime = 0;
+    private static long lastLethalSoundTime = 0;
+    private static long lastLostSoundTime   = 0;
     
     // Default theme sounds
     private static final SoundEvent[] DEFAULT_TARGET_LOCK_SOUNDS = {
@@ -64,6 +71,25 @@ public class TargetingSounds {
         SoundEvents.ENTITY_BLAZE_HURT
     };
     
+    // Cinematic theme sounds
+    private static final SoundEvent[] CINEMATIC_TARGET_LOCK_SOUNDS = {
+        SoundEvents.BLOCK_NOTE_BELL,
+        SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP,
+        SoundEvents.BLOCK_NOTE_PLING
+    };
+
+    private static final SoundEvent[] CINEMATIC_TARGET_SWITCH_SOUNDS = {
+        SoundEvents.BLOCK_NOTE_CHIME,
+        SoundEvents.BLOCK_NOTE_HARP,
+        SoundEvents.ENTITY_ITEM_PICKUP
+    };
+
+    private static final SoundEvent[] CINEMATIC_TARGET_LOST_SOUNDS = {
+        SoundEvents.BLOCK_NOTE_BASS,
+        SoundEvents.BLOCK_STONE_BUTTON_CLICK_OFF,
+        SoundEvents.BLOCK_LEVER_CLICK
+    };
+
     // Subtle theme sounds
     private static final SoundEvent[] SUBTLE_TARGET_LOCK_SOUNDS = {
         SoundEvents.BLOCK_SAND_STEP,
@@ -78,6 +104,9 @@ public class TargetingSounds {
         if (!TargetingConfig.enableSounds || !TargetingConfig.enableTargetLockSound) {
             return;
         }
+        long now = System.currentTimeMillis();
+        if (now - lastLockSoundTime < SOUND_COOLDOWN_MS) return;
+        lastLockSoundTime = now;
         
         // Check if this is a lethal target for special sound
         if (target instanceof EntityLiving && TargetingConfig.enableLethalTargetSound) {
@@ -104,6 +133,9 @@ public class TargetingSounds {
         if (!TargetingConfig.enableSounds || !TargetingConfig.enableTargetSwitchSound) {
             return;
         }
+        long now = System.currentTimeMillis();
+        if (now - lastSwitchSoundTime < SOUND_COOLDOWN_MS) return;
+        lastSwitchSoundTime = now;
         
         SoundEvent sound = getTargetSwitchSound();
         float volume = TargetingConfig.soundVolume * TargetingConfig.targetSwitchVolume;
@@ -120,6 +152,9 @@ public class TargetingSounds {
         if (!TargetingConfig.enableSounds || !TargetingConfig.enableLethalTargetSound) {
             return;
         }
+        long now = System.currentTimeMillis();
+        if (now - lastLethalSoundTime < SOUND_COOLDOWN_MS) return;
+        lastLethalSoundTime = now;
         
         SoundEvent sound = getLethalTargetSound();
         float volume = TargetingConfig.soundVolume * TargetingConfig.lethalTargetVolume;
@@ -136,6 +171,9 @@ public class TargetingSounds {
         if (!TargetingConfig.enableSounds || !TargetingConfig.enableTargetLostSound) {
             return;
         }
+        long now = System.currentTimeMillis();
+        if (now - lastLostSoundTime < SOUND_COOLDOWN_MS) return;
+        lastLostSoundTime = now;
         
         SoundEvent sound = getTargetLostSound();
         float volume = TargetingConfig.soundVolume * TargetingConfig.targetLostVolume;
@@ -143,21 +181,6 @@ public class TargetingSounds {
         
         mc.world.playSound(mc.player, mc.player.getPosition(),
             sound, SoundCategory.PLAYERS, volume, pitch);
-    }
-    
-    /**
-     * Play a subtle confirmation sound for successful targeting actions
-     */
-    public static void playConfirmationSound() {
-        if (!TargetingConfig.enableSounds) {
-            return;
-        }
-        
-        float volume = TargetingConfig.soundVolume * 0.3f; // Very quiet
-        float pitch = 1.8f; // High pitch for subtle confirmation
-        
-        mc.world.playSound(mc.player, mc.player.getPosition(), 
-            SoundEvents.BLOCK_STONE_BUTTON_CLICK_ON, SoundCategory.PLAYERS, volume, pitch);
     }
     
     /**
@@ -169,17 +192,6 @@ public class TargetingSounds {
         }
         
         return DamageCalculator.calculateHitsToKill(target) == 1;
-    }
-    
-    /**
-     * Play appropriate sound based on target type and context
-     */
-    public static void playContextualTargetSound(Entity target, boolean isNewTarget) {
-        if (isNewTarget) {
-            playTargetLockSound(target);
-        } else {
-            playTargetSwitchSound();
-        }
     }
     
     /**
@@ -225,6 +237,8 @@ public class TargetingSounds {
                 return MODERN_TARGET_LOCK_SOUNDS;
             case "subtle":
                 return SUBTLE_TARGET_LOCK_SOUNDS;
+            case "cinematic":
+                return CINEMATIC_TARGET_LOCK_SOUNDS;
             default:
                 return DEFAULT_TARGET_LOCK_SOUNDS;
         }
@@ -232,32 +246,23 @@ public class TargetingSounds {
     
     private static SoundEvent[] getTargetSwitchSoundsForTheme() {
         switch (TargetingConfig.soundTheme.toLowerCase()) {
-            case "zelda":
-                return ZELDA_TARGET_SWITCH_SOUNDS;
-            case "modern":
-                return DEFAULT_TARGET_SWITCH_SOUNDS; // Use default for modern theme
-            case "subtle":
-                return DEFAULT_TARGET_SWITCH_SOUNDS; // Use default for subtle theme
-            default:
-                return DEFAULT_TARGET_SWITCH_SOUNDS;
+            case "zelda":     return ZELDA_TARGET_SWITCH_SOUNDS;
+            case "cinematic": return CINEMATIC_TARGET_SWITCH_SOUNDS;
+            default:          return DEFAULT_TARGET_SWITCH_SOUNDS;
         }
     }
-    
+
     private static SoundEvent[] getLethalTargetSoundsForTheme() {
-        switch (TargetingConfig.soundTheme.toLowerCase()) {
-            case "zelda":
-                return ZELDA_TARGET_LOCK_SOUNDS; // Use lock sounds for zelda theme
-            case "modern":
-                return DEFAULT_LETHAL_TARGET_SOUNDS;
-            case "subtle":
-                return DEFAULT_LETHAL_TARGET_SOUNDS;
-            default:
-                return DEFAULT_LETHAL_TARGET_SOUNDS;
+        if ("zelda".equals(TargetingConfig.soundTheme.toLowerCase())) {
+            return ZELDA_TARGET_LOCK_SOUNDS;
         }
+        return DEFAULT_LETHAL_TARGET_SOUNDS;
     }
     
     private static SoundEvent[] getTargetLostSoundsForTheme() {
-        // All themes use default target lost sounds for consistency
+        if ("cinematic".equals(TargetingConfig.soundTheme.toLowerCase())) {
+            return CINEMATIC_TARGET_LOST_SOUNDS;
+        }
         return DEFAULT_TARGET_LOST_SOUNDS;
     }
     

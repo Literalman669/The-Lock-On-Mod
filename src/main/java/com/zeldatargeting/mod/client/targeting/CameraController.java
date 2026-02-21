@@ -10,6 +10,14 @@ import net.minecraft.util.math.Vec3d;
 
 public class CameraController {
     
+    private static final float MIN_TRACKING_SMOOTHING  = 0.3f;
+    private static final float BTP_MIN_SMOOTHING       = 0.05f;
+    private static final float VELOCITY_BOOST_SCALE    = 0.08f;
+    private static final float MAX_VELOCITY_BOOST      = 0.45f;
+    private static final float SMOOTHING_CEILING       = 0.95f;
+    private static final float LARGE_DIFF_THRESHOLD    = 10.0f;
+    private static final float LARGE_DIFF_MIN_SMOOTHING = 0.7f;
+
     private final Minecraft mc;
     private Entity currentTarget;
     
@@ -23,6 +31,15 @@ public class CameraController {
     private float targetPitch;
     private float currentYaw;
     private float currentPitch;
+    
+    // Velocity tracking for feed-forward lag compensation
+    private float prevTargetYaw;
+    private float prevTargetPitch;
+
+    // Suppress large-diff boost for a few ticks after deliberate target switch
+    // so cycling feels smooth rather than lurching.
+    private int switchCooldown = 0;
+    private static final int SWITCH_COOLDOWN_TICKS = 4;
     
     public CameraController() {
         this.mc = Minecraft.getMinecraft();
@@ -42,6 +59,9 @@ public class CameraController {
         
         if (target != null) {
             calculateTargetRotation();
+            prevTargetYaw = targetYaw;
+            prevTargetPitch = targetPitch;
+            switchCooldown = SWITCH_COOLDOWN_TICKS;
         }
     }
     
@@ -50,43 +70,52 @@ public class CameraController {
             return;
         }
         
-        // Handle BTP compatibility modes
-        if (ZeldaTargetingMod.isBetterThirdPersonLoaded()) {
-            String btpMode = TargetingConfig.btpCompatibilityMode;
-            if ("visual_only".equals(btpMode)) {
-                return; // No camera movement at all
-            } else if ("disabled".equals(btpMode)) {
-                // Full camera lock-on (ignore BTP)
-            } else if ("gentle".equals(btpMode)) {
-                // Gentle camera assistance - handled below
-            }
+        if (ZeldaTargetingMod.isBetterThirdPersonLoaded()
+                && "visual_only".equals(TargetingConfig.btpCompatibilityMode)) {
+            return;
         }
         
         this.currentTarget = target;
         calculateTargetRotation();
         
+        // Compute angular velocity of the target for feed-forward compensation
+        float yawVelocity = MathHelper.wrapDegrees(targetYaw - prevTargetYaw);
+        float pitchVelocity = targetPitch - prevTargetPitch;
+        prevTargetYaw = targetYaw;
+        prevTargetPitch = targetPitch;
+        
+        // Feed-forward: extrapolate one frame ahead so the camera leads the target
+        // instead of chasing it, eliminating the lag-behind on moving targets
+        float feedTargetYaw = targetYaw + yawVelocity;
+        float feedTargetPitch = MathHelper.clamp(targetPitch + pitchVelocity, -90.0f, 90.0f);
+        
         // Calculate smoothing based on BTP compatibility mode
-        float smoothing = Math.max(TargetingConfig.getCameraSmoothness(), 0.3f);
-        
-        // Apply BTP gentle mode intensity reduction
+        float smoothing = Math.max(TargetingConfig.getCameraSmoothness(), MIN_TRACKING_SMOOTHING);
+
         if (ZeldaTargetingMod.isBetterThirdPersonLoaded() && "gentle".equals(TargetingConfig.btpCompatibilityMode)) {
-            smoothing *= TargetingConfig.btpCameraIntensity; // Reduce intensity for BTP compatibility
-            smoothing = Math.max(smoothing, 0.05f); // Minimum smoothing to prevent jerkiness
+            smoothing = Math.max(smoothing * TargetingConfig.btpCameraIntensity, BTP_MIN_SMOOTHING);
+        }
+
+        // Per-mode smoothing: gentler (0.6x) in first-person for tighter precision feel
+        if (TargetingConfig.perModeSmoothingEnabled && mc.gameSettings.thirdPersonView == 0) {
+            smoothing = Math.max(smoothing * 0.6f, MIN_TRACKING_SMOOTHING);
+        }
+
+        float yawDiff = MathHelper.wrapDegrees(feedTargetYaw - currentYaw);
+        float pitchDiff = feedTargetPitch - currentPitch;
+
+        float angularSpeed = Math.abs(yawVelocity) + Math.abs(pitchVelocity);
+        float velocityBoost = Math.min(angularSpeed * VELOCITY_BOOST_SCALE, MAX_VELOCITY_BOOST);
+        float adaptiveSmoothing = Math.min(smoothing + velocityBoost, SMOOTHING_CEILING);
+        if (switchCooldown > 0) {
+            switchCooldown--;
+        } else if (Math.abs(yawDiff) > LARGE_DIFF_THRESHOLD || Math.abs(pitchDiff) > LARGE_DIFF_THRESHOLD) {
+            adaptiveSmoothing = Math.max(adaptiveSmoothing, LARGE_DIFF_MIN_SMOOTHING);
         }
         
-        // Calculate the difference between current and target rotation
-        float yawDiff = MathHelper.wrapDegrees(targetYaw - currentYaw);
-        float pitchDiff = targetPitch - currentPitch;
-        
-        // Apply faster interpolation for larger differences
-        float adaptiveSmoothing = smoothing;
-        if (Math.abs(yawDiff) > 10.0f || Math.abs(pitchDiff) > 10.0f) {
-            adaptiveSmoothing = Math.max(smoothing, 0.5f);
-        }
-        
-        currentYaw = interpolateAngle(currentYaw, targetYaw, adaptiveSmoothing);
+        currentYaw = interpolateAngle(currentYaw, feedTargetYaw, adaptiveSmoothing);
         currentPitch = MathHelper.clamp(
-            interpolateFloat(currentPitch, targetPitch, adaptiveSmoothing),
+            interpolateFloat(currentPitch, feedTargetPitch, adaptiveSmoothing),
             -90.0f, 90.0f
         );
         
@@ -96,22 +125,11 @@ public class CameraController {
     
     public void resetCamera() {
         if (hasStoredOriginal && mc.player != null) {
-            // Smoothly return to original rotation
-            targetYaw = originalYaw;
-            targetPitch = originalPitch;
-            
-            // Quick interpolation back to original
-            for (int i = 0; i < 10; i++) {
-                currentYaw = interpolateAngle(currentYaw, targetYaw, 0.3f);
-                currentPitch = interpolateFloat(currentPitch, targetPitch, 0.3f);
-            }
-            
-            mc.player.rotationYaw = originalYaw;
-            mc.player.rotationPitch = originalPitch;
-            mc.player.prevRotationYaw = originalYaw;
+            mc.player.rotationYaw     = originalYaw;
+            mc.player.rotationPitch   = originalPitch;
+            mc.player.prevRotationYaw   = originalYaw;
             mc.player.prevRotationPitch = originalPitch;
         }
-        
         currentTarget = null;
         hasStoredOriginal = false;
     }
@@ -133,14 +151,11 @@ public class CameraController {
         
         // Get interpolated target position
         double targetX = currentTarget.lastTickPosX + (currentTarget.posX - currentTarget.lastTickPosX) * partialTicks;
-        double targetY = currentTarget.lastTickPosY + (currentTarget.posY - currentTarget.lastTickPosY) * partialTicks + currentTarget.height * 0.5;
+        double targetY = currentTarget.lastTickPosY + (currentTarget.posY - currentTarget.lastTickPosY) * partialTicks
+                + currentTarget.height * (0.5 + TargetingConfig.cameraFocusYOffset);
         double targetZ = currentTarget.lastTickPosZ + (currentTarget.posZ - currentTarget.lastTickPosZ) * partialTicks;
         
-        // Calculate vector from player to target
-        Vec3d playerPos = new Vec3d(playerX, playerY, playerZ);
-        Vec3d targetPos = new Vec3d(targetX, targetY, targetZ);
-        
-        Vec3d direction = targetPos.subtract(playerPos).normalize();
+        Vec3d direction = new Vec3d(targetX - playerX, targetY - playerY, targetZ - playerZ).normalize();
         
         // Calculate yaw (horizontal rotation)
         float newYaw = (float) Math.toDegrees(Math.atan2(-direction.x, direction.z));
@@ -165,6 +180,26 @@ public class CameraController {
         
         targetYaw = currentPlayerYaw + yawDiff;
         targetPitch = MathHelper.clamp(currentPlayerPitch + pitchDiff, -90.0f, 90.0f);
+        
+        // Shoulder Surfing Reloaded compensation:
+        // SSR shifts the visual camera by xOffset in the screen-right direction.
+        // The crosshair (screen center) corresponds to a ray from the shoulder camera
+        // position, not the player's eye. We recompute targetYaw/Pitch from the
+        // shoulder camera position so the crosshair lands on the locked target.
+        if (ZeldaTargetingMod.isShoulderSurfingActive()
+                && TargetingConfig.ssrCompensationEnabled) {
+            float yawRad = (float) Math.toRadians(targetYaw);
+            // Read SSR's actual runtime x-offset (handles left/right shoulder, aiming, etc.)
+            double xOffset = ZeldaTargetingMod.getShoulderSurfingOffsetX();
+            double camX = playerX + xOffset * Math.cos(yawRad);
+            double camZ = playerZ + xOffset * Math.sin(yawRad);
+            double dX = targetX - camX;
+            double dZ = targetZ - camZ;
+            double dY = targetY - playerY;
+            double horizDist = Math.sqrt(dX * dX + dZ * dZ);
+            targetYaw = (float) Math.toDegrees(Math.atan2(-dX, dZ));
+            targetPitch = MathHelper.clamp((float) -Math.toDegrees(Math.atan2(dY, horizDist)), -90.0f, 90.0f);
+        }
     }
     
     private void applyCameraRotation() {

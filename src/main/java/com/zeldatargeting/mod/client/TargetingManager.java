@@ -21,9 +21,11 @@ public class TargetingManager {
     private CameraController cameraController;
     private TargetTracker targetTracker;
     
-    private boolean isActive = false;
-    private Entity currentTarget = null;
-    private int previousPerspective = 0; // Store the perspective before lock-on
+    private boolean isActive;
+    private Entity currentTarget;
+    private int previousPerspective;
+    private long lastCycleTime = 0;
+    private static final long CYCLE_COOLDOWN_MS = 250;
     
     private TargetingManager() {
         this.entityDetector = new EntityDetector();
@@ -97,8 +99,8 @@ public class TargetingManager {
     private void enableLockOn() {
         Entity target = entityDetector.findNearestTarget();
         if (target != null) {
-            setTarget(target);
             isActive = true;
+            setTarget(target);
             
             // Play target lock sound
             TargetingSounds.playTargetLockSound(target);
@@ -113,6 +115,15 @@ public class TargetingManager {
             }
             
             ZeldaTargetingMod.getLogger().debug("Lock-on enabled on target: " + target.getName());
+            if (TargetingConfig.debugCompatibility) {
+                ZeldaTargetingMod.getLogger().info("[ZT Debug] Lock-on activated | SSR active: "
+                        + ZeldaTargetingMod.isShoulderSurfingActive()
+                        + " | SSR offsetX: " + ZeldaTargetingMod.getShoulderSurfingOffsetX()
+                        + " | BTP loaded: " + ZeldaTargetingMod.isBetterThirdPersonLoaded()
+                        + " | BTP mode: " + TargetingConfig.btpCompatibilityMode
+                        + " | Preset: " + TargetingConfig.lockOnPreset
+                        + " | Smoothness: " + TargetingConfig.cameraSmoothness);
+            }
         }
     }
     
@@ -139,6 +150,13 @@ public class TargetingManager {
             enableLockOn();
             return;
         }
+        
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastCycleTime < CYCLE_COOLDOWN_MS) {
+            return;
+        }
+        
+        lastCycleTime = currentTime;
         
         Entity newTarget = entityDetector.findNextTarget(currentTarget, forward);
         if (newTarget != null && newTarget != currentTarget) {

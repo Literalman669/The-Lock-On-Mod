@@ -7,6 +7,7 @@ import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.MobEffects;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
@@ -64,15 +65,16 @@ public class DamageCalculator {
         }
         
         float damage = calculateDamage(target);
-        int hitsToKill = calculateHitsToKill(target);
-        
         if (damage <= 0) {
             return "No damage";
         }
         
+        float targetHealth = ((EntityLiving) target).getHealth();
+        int hitsToKill = (int) Math.ceil(targetHealth / damage);
+        
         if (hitsToKill == 1) {
             return String.format("%.1f dmg (LETHAL)", damage);
-        } else if (hitsToKill > 0 && hitsToKill <= 99) {
+        } else if (hitsToKill <= 99) {
             return String.format("%.1f dmg (%d hits)", damage, hitsToKill);
         } else {
             return String.format("%.1f dmg", damage);
@@ -101,20 +103,18 @@ public class DamageCalculator {
         float baseDamage = 1.0f;
         
         // Apply strength effect
-        if (player.isPotionActive(net.minecraft.init.MobEffects.STRENGTH)) {
-            PotionEffect effect = player.getActivePotionEffect(net.minecraft.init.MobEffects.STRENGTH);
+        if (player.isPotionActive(MobEffects.STRENGTH)) {
+            PotionEffect effect = player.getActivePotionEffect(MobEffects.STRENGTH);
             if (effect != null) {
-                int amplifier = effect.getAmplifier();
-                baseDamage += (amplifier + 1) * 3.0f;
+                baseDamage += (effect.getAmplifier() + 1) * 3.0f;
             }
         }
         
         // Apply weakness effect
-        if (player.isPotionActive(net.minecraft.init.MobEffects.WEAKNESS)) {
-            PotionEffect effect = player.getActivePotionEffect(net.minecraft.init.MobEffects.WEAKNESS);
+        if (player.isPotionActive(MobEffects.WEAKNESS)) {
+            PotionEffect effect = player.getActivePotionEffect(MobEffects.WEAKNESS);
             if (effect != null) {
-                int amplifier = effect.getAmplifier();
-                baseDamage -= (amplifier + 1) * 4.0f;
+                baseDamage -= (effect.getAmplifier() + 1) * 4.0f;
             }
         }
         
@@ -139,32 +139,25 @@ public class DamageCalculator {
         baseDamage += EnchantmentHelper.getModifierForCreature(weapon, target.getCreatureAttribute());
         
         // Apply strength effect
-        if (player.isPotionActive(net.minecraft.init.MobEffects.STRENGTH)) {
-            PotionEffect effect = player.getActivePotionEffect(net.minecraft.init.MobEffects.STRENGTH);
+        if (player.isPotionActive(MobEffects.STRENGTH)) {
+            PotionEffect effect = player.getActivePotionEffect(MobEffects.STRENGTH);
             if (effect != null) {
-                int amplifier = effect.getAmplifier();
-                baseDamage += (amplifier + 1) * 3.0f;
+                baseDamage += (effect.getAmplifier() + 1) * 3.0f;
             }
         }
         
         // Apply weakness effect
-        if (player.isPotionActive(net.minecraft.init.MobEffects.WEAKNESS)) {
-            PotionEffect effect = player.getActivePotionEffect(net.minecraft.init.MobEffects.WEAKNESS);
+        if (player.isPotionActive(MobEffects.WEAKNESS)) {
+            PotionEffect effect = player.getActivePotionEffect(MobEffects.WEAKNESS);
             if (effect != null) {
-                int amplifier = effect.getAmplifier();
-                baseDamage -= (amplifier + 1) * 4.0f;
+                baseDamage -= (effect.getAmplifier() + 1) * 4.0f;
             }
         }
         
         // REAL-TIME CRITICAL HIT AND SPRINT CALCULATIONS
         boolean wouldCrit = canCriticalHit(player) && attackCooldown > 0.9f;
-        boolean isSprinting = player.isSprinting() && !wouldCrit; // Sprinting prevents crits
-        
         if (wouldCrit) {
             baseDamage *= 1.5f;
-        } else if (isSprinting) {
-            // Knockback but no extra damage in 1.12.2
-            // baseDamage remains the same
         }
         
         // Apply target's armor and resistance
@@ -176,7 +169,7 @@ public class DamageCalculator {
     private static boolean canCriticalHit(EntityPlayer player) {
         // Real critical hit conditions for MC 1.12.2
         return player.fallDistance > 0.0f && !player.onGround && !player.isOnLadder() &&
-               !player.isInWater() && !player.isPotionActive(net.minecraft.init.MobEffects.BLINDNESS) &&
+               !player.isInWater() && !player.isPotionActive(MobEffects.BLINDNESS) &&
                !player.isRiding() && !player.isSprinting();
     }
     
@@ -203,8 +196,8 @@ public class DamageCalculator {
         float damageMultiplier = 1.0f - (armorReduction / 25.0f);
         
         // Apply resistance potion effect
-        if (target.isPotionActive(net.minecraft.init.MobEffects.RESISTANCE)) {
-            PotionEffect resistance = target.getActivePotionEffect(net.minecraft.init.MobEffects.RESISTANCE);
+        if (target.isPotionActive(MobEffects.RESISTANCE)) {
+            PotionEffect resistance = target.getActivePotionEffect(MobEffects.RESISTANCE);
             if (resistance != null) {
                 int amplifier = resistance.getAmplifier();
                 float resistanceReduction = (amplifier + 1) * 0.2f; // 20% per level
@@ -219,16 +212,14 @@ public class DamageCalculator {
      * Check if the target has specific vulnerabilities
      */
     public static boolean hasWeakness(EntityLiving target) {
-        // Check for weakness potion effect
-        return target.isPotionActive(net.minecraft.init.MobEffects.WEAKNESS);
+        return target.isPotionActive(MobEffects.WEAKNESS);
     }
     
     /**
      * Check if the target has damage resistance
      */
     public static boolean hasResistance(EntityLiving target) {
-        // Check for resistance potion effect
-        return target.isPotionActive(net.minecraft.init.MobEffects.RESISTANCE);
+        return target.isPotionActive(MobEffects.RESISTANCE);
     }
     
     /**

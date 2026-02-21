@@ -15,6 +15,7 @@ public class TargetingConfig {
     public static double maxTrackingDistance = 20.0;
     public static double maxAngle = 60.0;
     public static boolean requireLineOfSight = true;
+    public static String targetPriority = "nearest"; // "nearest", "health", "threat", "angle"
     
     // Visual Settings
     public static boolean showReticle = true;
@@ -32,11 +33,17 @@ public class TargetingConfig {
     public static boolean autoThirdPerson = false;
     public static String btpCompatibilityMode = "gentle"; // "disabled", "gentle", "visual_only"
     public static float btpCameraIntensity = 0.3f; // 0.0 to 1.0 for gentle mode
+    public static boolean ssrCompensationEnabled = true;
+    public static float ssrXOffset = -0.875f; // SSR camera x-offset (negative = left shoulder)
+    public static float cameraFocusYOffset = 0.0f; // -1.0 to 1.0: shifts vertical focus point relative to entity height
+    public static String lockOnPreset = "balanced"; // "cinematic", "balanced", "snappy"
+    public static boolean debugCompatibility = false; // Log SSR/BTP detection details each tick
+    public static boolean perModeSmoothingEnabled = false; // Gentler smoothing in first-person view
     
     // Entity Filtering
     public static boolean targetHostileMobs = true;
-    public static boolean targetNeutralMobs = false;
-    public static boolean targetPassiveMobs = false;
+    public static boolean targetNeutralMobs = true;
+    public static boolean targetPassiveMobs = true;
     public static boolean targetPlayers = false;
     
     // Audio Settings
@@ -72,6 +79,8 @@ public class TargetingConfig {
     public static int lethalDamageColor = 0xFF0000; // Red for lethal hits
     public static boolean damageNumbersFadeOut = true;
     public static float damageNumbersOffset = 0.5f; // Y offset above entity
+    public static String damageNumbersMotion = "default"; // "default", "subtle", "arcade"
+    public static boolean critEmphasis = true; // Extra pop scale + flash on crits
     
     // Enhanced Visual Feedback Settings
     public static boolean showDamagePrediction = true;
@@ -104,6 +113,8 @@ public class TargetingConfig {
                 "Maximum angle from look direction to detect targets (degrees)");
             requireLineOfSight = config.getBoolean("requireLineOfSight", "targeting", requireLineOfSight,
                 "Require line of sight to target entities");
+            targetPriority = config.getString("targetPriority", "targeting", targetPriority,
+                "Target priority: nearest, health, threat, angle");
             
             // Visual Settings
             showReticle = config.getBoolean("showReticle", "visual", showReticle,
@@ -116,6 +127,8 @@ public class TargetingConfig {
                 "Show name of targeted entity");
             reticleScale = config.getFloat("reticleScale", "visual", reticleScale, 0.5f, 3.0f,
                 "Scale of the targeting reticle");
+            reticleColor = config.getInt("reticleColor", "visual", reticleColor, 0x000000, 0xFFFFFF,
+                "Color of the targeting reticle (hex RGB, default 0xFF0000 = red)");
             
             // Camera Settings
             cameraSmoothness = config.getFloat("cameraSmoothness", "camera", cameraSmoothness, 0.01f, 1.0f,
@@ -132,6 +145,18 @@ public class TargetingConfig {
                 "Better Third Person compatibility mode: disabled, gentle, visual_only");
             btpCameraIntensity = config.getFloat("btpCameraIntensity", "camera", btpCameraIntensity, 0.0f, 1.0f,
                 "Camera movement intensity when in BTP gentle mode (0.0 = no movement, 1.0 = full movement)");
+            ssrCompensationEnabled = config.getBoolean("ssrCompensationEnabled", "camera", ssrCompensationEnabled,
+                "Enable crosshair alignment compensation for Shoulder Surfing Reloaded");
+            ssrXOffset = config.getFloat("ssrXOffset", "camera", ssrXOffset, -3.0f, 3.0f,
+                "SSR camera x-offset (match your SSR config, default -0.875 = left shoulder)");
+            cameraFocusYOffset = config.getFloat("cameraFocusYOffset", "camera", cameraFocusYOffset, -1.0f, 1.0f,
+                "Vertical camera focus offset (0=entity center, positive=look higher, negative=look lower)");
+            lockOnPreset = config.getString("lockOnPreset", "camera", lockOnPreset,
+                "Lock-on feel preset: cinematic, balanced, snappy");
+            debugCompatibility = config.getBoolean("debugCompatibility", "camera", debugCompatibility,
+                "Log mod compatibility diagnostics (SSR/BTP) to game log");
+            perModeSmoothingEnabled = config.getBoolean("perModeSmoothingEnabled", "camera", perModeSmoothingEnabled,
+                "Apply a gentler smoothing multiplier in first-person view");
             
             // Entity Filtering
             targetHostileMobs = config.getBoolean("targetHostileMobs", "entities", targetHostileMobs,
@@ -202,6 +227,10 @@ public class TargetingConfig {
                 "Enable smooth fade-out animation for damage numbers");
             damageNumbersOffset = config.getFloat("damageNumbersOffset", "damage_numbers", damageNumbersOffset, 0.0f, 2.0f,
                 "Vertical offset for damage numbers above entities");
+            damageNumbersMotion = config.getString("damageNumbersMotion", "damage_numbers", damageNumbersMotion,
+                "Damage number motion style: default, subtle, arcade");
+            critEmphasis = config.getBoolean("critEmphasis", "damage_numbers", critEmphasis,
+                "Extra scale pop and color flash on critical hits");
             
             // Enhanced Visual Feedback Settings
             showDamagePrediction = config.getBoolean("showDamagePrediction", "visual_feedback", showDamagePrediction,
@@ -238,12 +267,14 @@ public class TargetingConfig {
                 config.get("targeting", "maxTrackingDistance", (float) maxTrackingDistance).set((float) maxTrackingDistance);
                 config.get("targeting", "maxAngle", (float) maxAngle).set((float) maxAngle);
                 config.get("targeting", "requireLineOfSight", requireLineOfSight).set(requireLineOfSight);
+                config.get("targeting", "targetPriority", targetPriority).set(targetPriority);
                 
                 config.get("visual", "showReticle", showReticle).set(showReticle);
                 config.get("visual", "showHealthBar", showHealthBar).set(showHealthBar);
                 config.get("visual", "showDistance", showDistance).set(showDistance);
                 config.get("visual", "showTargetName", showTargetName).set(showTargetName);
                 config.get("visual", "reticleScale", reticleScale).set(reticleScale);
+                config.get("visual", "reticleColor", reticleColor).set(reticleColor);
                 
                 config.get("camera", "cameraSmoothness", cameraSmoothness).set(cameraSmoothness);
                 config.get("camera", "maxPitchAdjustment", maxPitchAdjustment).set(maxPitchAdjustment);
@@ -252,6 +283,12 @@ public class TargetingConfig {
                 config.get("camera", "autoThirdPerson", autoThirdPerson).set(autoThirdPerson);
                 config.get("camera", "btpCompatibilityMode", btpCompatibilityMode).set(btpCompatibilityMode);
                 config.get("camera", "btpCameraIntensity", btpCameraIntensity).set(btpCameraIntensity);
+                config.get("camera", "ssrCompensationEnabled", ssrCompensationEnabled).set(ssrCompensationEnabled);
+                config.get("camera", "ssrXOffset", ssrXOffset).set(ssrXOffset);
+                config.get("camera", "cameraFocusYOffset", cameraFocusYOffset).set(cameraFocusYOffset);
+                config.get("camera", "lockOnPreset", lockOnPreset).set(lockOnPreset);
+                config.get("camera", "debugCompatibility", debugCompatibility).set(debugCompatibility);
+                config.get("camera", "perModeSmoothingEnabled", perModeSmoothingEnabled).set(perModeSmoothingEnabled);
                 
                 config.get("entities", "targetHostileMobs", targetHostileMobs).set(targetHostileMobs);
                 config.get("entities", "targetNeutralMobs", targetNeutralMobs).set(targetNeutralMobs);
@@ -285,6 +322,8 @@ public class TargetingConfig {
                 config.get("damage_numbers", "lethalDamageColor", lethalDamageColor).set(lethalDamageColor);
                 config.get("damage_numbers", "damageNumbersFadeOut", damageNumbersFadeOut).set(damageNumbersFadeOut);
                 config.get("damage_numbers", "damageNumbersOffset", damageNumbersOffset).set(damageNumbersOffset);
+                config.get("damage_numbers", "damageNumbersMotion", damageNumbersMotion).set(damageNumbersMotion);
+                config.get("damage_numbers", "critEmphasis", critEmphasis).set(critEmphasis);
                 
                 config.get("visual_feedback", "showDamagePrediction", showDamagePrediction).set(showDamagePrediction);
                 config.get("visual_feedback", "showHitsToKill", showHitsToKill).set(showHitsToKill);
@@ -311,6 +350,7 @@ public class TargetingConfig {
         maxTrackingDistance = 20.0;
         maxAngle = 60.0;
         requireLineOfSight = true;
+        targetPriority = "nearest";
         
         showReticle = true;
         showHealthBar = true;
@@ -326,10 +366,16 @@ public class TargetingConfig {
         autoThirdPerson = false;
         btpCompatibilityMode = "gentle";
         btpCameraIntensity = 0.3f;
+        ssrCompensationEnabled = true;
+        ssrXOffset = -0.875f;
+        cameraFocusYOffset = 0.0f;
+        lockOnPreset = "balanced";
+        debugCompatibility = false;
+        perModeSmoothingEnabled = false;
         
         targetHostileMobs = true;
-        targetNeutralMobs = false;
-        targetPassiveMobs = false;
+        targetNeutralMobs = true;
+        targetPassiveMobs = true;
         targetPlayers = false;
         
         enableSounds = true;
@@ -362,6 +408,8 @@ public class TargetingConfig {
         lethalDamageColor = 0xFF0000;
         damageNumbersFadeOut = true;
         damageNumbersOffset = 0.5f;
+        damageNumbersMotion = "default";
+        critEmphasis = true;
         
         showDamagePrediction = true;
         showHitsToKill = true;

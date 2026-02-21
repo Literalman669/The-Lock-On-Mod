@@ -7,22 +7,42 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.lwjgl.input.Keyboard;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 @SideOnly(Side.CLIENT)
 public class GuiTargetingConfig extends GuiScreen {
     private final GuiScreen parentScreen;
     private int currentPage = 0;
     private final int totalPages = 5; // Added sound tweaking + damage numbers pages
-    
+
+    private static final String INTERACTION_HINT = "§7LMB: Increase/Toggle  §8|  §7RMB: Decrease  §8|  §7Shift: Fine Tune";
+    private static final String[] PAGE_TITLES = {
+        "§6Targeting & Visual Settings",
+        "§6Camera Settings",
+        "§6Entity Filtering & Basic Audio",
+        "§6Advanced Sound Tweaking",
+        "§6Damage Numbers Configuration"
+    };
+    private static final String[] PAGE_DESCRIPTIONS = {
+        "§7Core lock-on behavior and HUD presentation",
+        "§7Camera lock style, smoothness, and compatibility",
+        "§7What can be targeted and essential audio controls",
+        "§7Theme, volume, pitch, and variety tuning",
+        "§7Floating damage text visuals and color behavior"
+    };
+
     // Button IDs
     private static final int DONE_BUTTON = 0;
     private static final int RESET_BUTTON = 1;
     private static final int NEXT_PAGE_BUTTON = 2;
     private static final int PREV_PAGE_BUTTON = 3;
-    
+
     // Config button IDs
     private static final int TARGETING_RANGE_BUTTON = 100;
     private static final int MAX_TRACKING_DISTANCE_BUTTON = 101;
@@ -47,14 +67,14 @@ public class GuiTargetingConfig extends GuiScreen {
     private static final int SOUND_VOLUME_BUTTON = 120;
     private static final int UPDATE_FREQUENCY_BUTTON = 121;
     private static final int VALIDATION_INTERVAL_BUTTON = 122;
-    
+
     // Enhanced Visual Feedback button IDs
     private static final int SHOW_DAMAGE_PREDICTION_TOGGLE = 123;
     private static final int SHOW_HITS_TO_KILL_TOGGLE = 124;
     private static final int SHOW_VULNERABILITIES_TOGGLE = 125;
     private static final int HIGHLIGHT_LETHAL_TARGETS_TOGGLE = 126;
     private static final int DAMAGE_PREDICTION_SCALE_BUTTON = 127;
-    
+
     // Enhanced Audio Settings button IDs
     private static final int ENABLE_TARGET_LOCK_SOUND_TOGGLE = 128;
     private static final int ENABLE_TARGET_SWITCH_SOUND_TOGGLE = 129;
@@ -64,7 +84,7 @@ public class GuiTargetingConfig extends GuiScreen {
     private static final int TARGET_SWITCH_VOLUME_BUTTON = 133;
     private static final int LETHAL_TARGET_VOLUME_BUTTON = 134;
     private static final int TARGET_LOST_VOLUME_BUTTON = 135;
-    
+
     // Advanced Sound Tweaking button IDs
     private static final int SOUND_THEME_BUTTON = 136;
     private static final int TARGET_LOCK_PITCH_BUTTON = 137;
@@ -72,7 +92,7 @@ public class GuiTargetingConfig extends GuiScreen {
     private static final int LETHAL_TARGET_PITCH_BUTTON = 139;
     private static final int TARGET_LOST_PITCH_BUTTON = 140;
     private static final int ENABLE_SOUND_VARIETY_TOGGLE = 141;
-    
+
     // Damage Numbers Configuration button IDs
     private static final int ENABLE_DAMAGE_NUMBERS_TOGGLE = 142;
     private static final int DAMAGE_NUMBERS_SCALE_BUTTON = 143;
@@ -84,6 +104,13 @@ public class GuiTargetingConfig extends GuiScreen {
     private static final int LETHAL_DAMAGE_COLOR_BUTTON = 149;
     private static final int DAMAGE_NUMBERS_FADEOUT_TOGGLE = 150;
     private static final int DAMAGE_NUMBERS_OFFSET_BUTTON = 151;
+    private static final int CAMERA_PRESET_BUTTON = 152;
+    private static final int CAMERA_FOCUS_OFFSET_BUTTON = 153;
+    private static final int DEBUG_COMPAT_TOGGLE = 154;
+    private static final int TARGET_PRIORITY_BUTTON = 155;
+    private static final int PER_MODE_SMOOTHING_TOGGLE = 156;
+    private static final int DAMAGE_NUMBERS_MOTION_BUTTON = 157;
+    private static final int CRIT_EMPHASIS_TOGGLE = 158;
 
     public GuiTargetingConfig(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -98,16 +125,16 @@ public class GuiTargetingConfig extends GuiScreen {
         if (scaleFactor == 0) scaleFactor = 1000;
         int scaledWidth = this.mc.displayWidth / scaleFactor;
         int scaledHeight = this.mc.displayHeight / scaleFactor;
-        
+
         // Use the smaller of actual screen dimensions or scaled dimensions for safety
         int effectiveWidth = Math.min(this.width, scaledWidth);
         int effectiveHeight = Math.min(this.height, scaledHeight);
-        
+
         int centerX = effectiveWidth / 2;
-        int startY = Math.max(45, effectiveHeight / 10); // Dynamic start position
-        int buttonWidth = Math.min(200, effectiveWidth - 40); // Ensure buttons fit
-        int buttonHeight = 18; // Slightly smaller for better fit
-        int spacing = Math.max(20, Math.min(25, (effectiveHeight - startY - 80) / 15)); // Dynamic spacing
+        int startY = Math.max(74, effectiveHeight / 9);
+        int buttonWidth = Math.min(220, effectiveWidth - 40);
+        int buttonHeight = 20;
+        int spacing = Math.max(20, Math.min(24, (effectiveHeight - startY - 90) / 14));
 
         // Page navigation buttons - positioned dynamically
         int buttonY = effectiveHeight - 25;
@@ -119,7 +146,11 @@ public class GuiTargetingConfig extends GuiScreen {
         }
 
         // Control buttons
-        this.buttonList.add(new GuiButton(DONE_BUTTON, centerX - 100, buttonY, 95, 20, I18n.format("gui.done")));
+        String doneLabel = I18n.format("gui.done");
+        if (doneLabel == null || doneLabel.isEmpty()) {
+            doneLabel = "Done";
+        }
+        this.buttonList.add(new GuiButton(DONE_BUTTON, centerX - 100, buttonY, 95, 20, doneLabel));
         this.buttonList.add(new GuiButton(RESET_BUTTON, centerX + 5, buttonY, 95, 20, "Reset"));
 
         int currentY = startY;
@@ -140,7 +171,11 @@ public class GuiTargetingConfig extends GuiScreen {
 
                 addToggleButton(REQUIRE_LOS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Require Line of Sight", TargetingConfig.requireLineOfSight);
-                currentY += spacing + 10;
+                currentY += spacing;
+
+                addTargetPriorityButton(TARGET_PRIORITY_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        TargetingConfig.targetPriority);
+                currentY += spacing;
 
                 addToggleButton(SHOW_RETICLE_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Show Reticle", TargetingConfig.showReticle);
@@ -212,6 +247,22 @@ public class GuiTargetingConfig extends GuiScreen {
                     addValueButton(BTP_INTENSITY_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                             "BTP Camera Intensity", TargetingConfig.btpCameraIntensity, 0.0f, 1.0f, 0.05f);
                 }
+                currentY += spacing;
+
+                addCameraPresetButton(CAMERA_PRESET_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        TargetingConfig.lockOnPreset);
+                currentY += spacing;
+
+                addValueButton(CAMERA_FOCUS_OFFSET_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "Focus Y Offset", TargetingConfig.cameraFocusYOffset, -1.0f, 1.0f, 0.1f);
+                currentY += spacing;
+
+                addToggleButton(DEBUG_COMPAT_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "Debug Compatibility Log", TargetingConfig.debugCompatibility);
+                currentY += spacing;
+
+                addToggleButton(PER_MODE_SMOOTHING_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "Gentler 1st-Person Smoothing", TargetingConfig.perModeSmoothingEnabled);
                 break;
 
             case 2: // Entity Filtering & Basic Audio
@@ -303,80 +354,174 @@ public class GuiTargetingConfig extends GuiScreen {
                 addValueButton(TARGET_LOST_PITCH_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Lost Pitch", TargetingConfig.targetLostPitch, 0.5f, 2.0f, 0.1f);
                 break;
-                
+
             case 4: // Damage Numbers Configuration
                 addToggleButton(ENABLE_DAMAGE_NUMBERS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Enable Damage Numbers", TargetingConfig.enableDamageNumbers);
                 currentY += spacing;
-                
+
                 addValueButton(DAMAGE_NUMBERS_SCALE_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Damage Numbers Scale", TargetingConfig.damageNumbersScale, 0.5f, 3.0f, 0.1f);
                 currentY += spacing;
-                
+
                 addValueButton(DAMAGE_NUMBERS_DURATION_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Duration (ticks)", (float)TargetingConfig.damageNumbersDuration, 20.0f, 200.0f, 10.0f);
                 currentY += spacing;
-                
+
                 addValueButton(DAMAGE_NUMBERS_OFFSET_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Vertical Offset", TargetingConfig.damageNumbersOffset, 0.0f, 2.0f, 0.1f);
                 currentY += spacing + 10;
-                
+
                 addToggleButton(DAMAGE_NUMBERS_CRITS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Critical Hit Effects", TargetingConfig.damageNumbersCrits);
                 currentY += spacing;
-                
+
                 addToggleButton(DAMAGE_NUMBERS_COLORS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Colored Damage Numbers", TargetingConfig.damageNumbersColors);
                 currentY += spacing;
-                
+
                 addToggleButton(DAMAGE_NUMBERS_FADEOUT_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Fade-Out Animation", TargetingConfig.damageNumbersFadeOut);
+                currentY += spacing;
+
+                addDamageMotionButton(DAMAGE_NUMBERS_MOTION_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        TargetingConfig.damageNumbersMotion);
+                currentY += spacing;
+
+                addToggleButton(CRIT_EMPHASIS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "Crit Pop Emphasis", TargetingConfig.critEmphasis);
                 currentY += spacing + 10;
-                
+
                 // Color configuration buttons (simplified for now)
                 addColorButton(DAMAGE_NUMBERS_COLOR_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Default Color", TargetingConfig.damageNumbersColor);
                 currentY += spacing;
-                
+
                 addColorButton(CRITICAL_DAMAGE_COLOR_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Critical Color", TargetingConfig.criticalDamageColor);
                 currentY += spacing;
-                
+
                 addColorButton(LETHAL_DAMAGE_COLOR_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Lethal Color", TargetingConfig.lethalDamageColor);
                 break;
         }
+
+        updateButtonStates();
+    }
+
+    private String formatToggleText(String name, boolean currentValue) {
+        return name + ": " + (currentValue ? "§aON" : "§cOFF");
+    }
+
+    private String formatValue(float value) {
+        if (Math.abs(value - Math.round(value)) < 0.001f) {
+            return String.format("%.0f", value);
+        }
+        if (Math.abs(value * 10.0f - Math.round(value * 10.0f)) < 0.001f) {
+            return String.format("%.1f", value);
+        }
+        return String.format("%.2f", value);
+    }
+
+    private String formatValue(double value) {
+        return formatValue((float) value);
     }
 
     private void addToggleButton(int id, int x, int y, int width, int height, String name, boolean currentValue) {
-        String displayText = name + ": " + (currentValue ? "ON" : "OFF");
+        String displayText = formatToggleText(name, currentValue);
         GuiButton button = new GuiButton(id, x, y, width, height, displayText);
         this.buttonList.add(button);
     }
 
     private void addValueButton(int id, int x, int y, int width, int height, String name, float currentValue, float minValue, float maxValue, float increment) {
-        String displayText = name + ": " + String.format("%.2f", currentValue);
+        String displayText = name + ": " + formatValue(currentValue);
         GuiButton button = new GuiButton(id, x, y, width, height, displayText);
         this.buttonList.add(button);
     }
-    
+
     private void addBtpModeButton(int id, int x, int y, int width, int height, String name, String currentMode) {
         String displayText = name + ": " + currentMode.toUpperCase();
         GuiButton button = new GuiButton(id, x, y, width, height, displayText);
         this.buttonList.add(button);
     }
-    
+
     private void addSoundThemeButton(int id, int x, int y, int width, int height, String name, String currentTheme) {
         String displayText = name + ": " + currentTheme.toUpperCase();
         GuiButton button = new GuiButton(id, x, y, width, height, displayText);
         this.buttonList.add(button);
     }
-    
+
+    private void addCameraPresetButton(int id, int x, int y, int width, int height, String currentPreset) {
+        String displayText = "Camera Feel: " + currentPreset.toUpperCase();
+        GuiButton button = new GuiButton(id, x, y, width, height, displayText);
+        this.buttonList.add(button);
+    }
+
+    private void addTargetPriorityButton(int id, int x, int y, int width, int height, String currentPriority) {
+        String displayText = "Target Priority: " + currentPriority.toUpperCase();
+        GuiButton button = new GuiButton(id, x, y, width, height, displayText);
+        this.buttonList.add(button);
+    }
+
+    private void addDamageMotionButton(int id, int x, int y, int width, int height, String currentMotion) {
+        String displayText = "Number Motion: " + currentMotion.toUpperCase();
+        GuiButton button = new GuiButton(id, x, y, width, height, displayText);
+        this.buttonList.add(button);
+    }
+
     private void addColorButton(int id, int x, int y, int width, int height, String name, int currentColor) {
         String colorHex = String.format("#%06X", currentColor & 0xFFFFFF);
         String displayText = name + ": " + colorHex;
         GuiButton button = new GuiButton(id, x, y, width, height, displayText);
         this.buttonList.add(button);
+    }
+
+    private GuiButton getButtonById(int id) {
+        for (GuiButton button : this.buttonList) {
+            if (button.id == id) {
+                return button;
+            }
+        }
+        return null;
+    }
+
+    private void setButtonEnabled(int id, boolean enabled) {
+        GuiButton button = getButtonById(id);
+        if (button != null) {
+            button.enabled = enabled;
+        }
+    }
+
+    private void updateButtonStates() {
+        setButtonEnabled(BTP_INTENSITY_BUTTON, "gentle".equals(TargetingConfig.btpCompatibilityMode));
+
+        boolean soundsEnabled = TargetingConfig.enableSounds;
+        setButtonEnabled(SOUND_VOLUME_BUTTON, soundsEnabled);
+        setButtonEnabled(SOUND_THEME_BUTTON, soundsEnabled);
+        setButtonEnabled(ENABLE_SOUND_VARIETY_TOGGLE, soundsEnabled);
+        setButtonEnabled(TARGET_LOCK_VOLUME_BUTTON, soundsEnabled);
+        setButtonEnabled(TARGET_SWITCH_VOLUME_BUTTON, soundsEnabled);
+        setButtonEnabled(LETHAL_TARGET_VOLUME_BUTTON, soundsEnabled);
+        setButtonEnabled(TARGET_LOST_VOLUME_BUTTON, soundsEnabled);
+        setButtonEnabled(TARGET_LOCK_PITCH_BUTTON, soundsEnabled);
+        setButtonEnabled(TARGET_SWITCH_PITCH_BUTTON, soundsEnabled);
+        setButtonEnabled(LETHAL_TARGET_PITCH_BUTTON, soundsEnabled);
+        setButtonEnabled(TARGET_LOST_PITCH_BUTTON, soundsEnabled);
+
+        boolean damageNumbersEnabled = TargetingConfig.enableDamageNumbers;
+        setButtonEnabled(DAMAGE_NUMBERS_SCALE_BUTTON, damageNumbersEnabled);
+        setButtonEnabled(DAMAGE_NUMBERS_DURATION_BUTTON, damageNumbersEnabled);
+        setButtonEnabled(DAMAGE_NUMBERS_OFFSET_BUTTON, damageNumbersEnabled);
+        setButtonEnabled(DAMAGE_NUMBERS_CRITS_TOGGLE, damageNumbersEnabled);
+        setButtonEnabled(DAMAGE_NUMBERS_COLORS_TOGGLE, damageNumbersEnabled);
+        setButtonEnabled(DAMAGE_NUMBERS_FADEOUT_TOGGLE, damageNumbersEnabled);
+        setButtonEnabled(DAMAGE_NUMBERS_MOTION_BUTTON, damageNumbersEnabled);
+        setButtonEnabled(CRIT_EMPHASIS_TOGGLE, damageNumbersEnabled && TargetingConfig.damageNumbersCrits);
+
+        boolean damageColorControlsEnabled = damageNumbersEnabled && TargetingConfig.damageNumbersColors;
+        setButtonEnabled(DAMAGE_NUMBERS_COLOR_BUTTON, damageColorControlsEnabled);
+        setButtonEnabled(CRITICAL_DAMAGE_COLOR_BUTTON, damageColorControlsEnabled);
+        setButtonEnabled(LETHAL_DAMAGE_COLOR_BUTTON, damageColorControlsEnabled);
     }
 
     private void cycleSoundTheme() {
@@ -391,6 +536,9 @@ public class GuiTargetingConfig extends GuiScreen {
                 TargetingConfig.soundTheme = "subtle";
                 break;
             case "subtle":
+                TargetingConfig.soundTheme = "cinematic";
+                break;
+            case "cinematic":
                 TargetingConfig.soundTheme = "default";
                 break;
             default:
@@ -400,90 +548,56 @@ public class GuiTargetingConfig extends GuiScreen {
         TargetingConfig.saveConfig();
     }
 
-    @Override
-    protected void actionPerformed(@Nonnull GuiButton button) throws IOException {
-        if (button.id == DONE_BUTTON) {
-            TargetingConfig.saveConfig();
-            this.mc.displayGuiScreen(this.parentScreen);
-        } else if (button.id == RESET_BUTTON) {
-            TargetingConfig.resetToDefaults();
-            this.initGui();
-        } else if (button.id == NEXT_PAGE_BUTTON) {
-            currentPage++;
-            this.initGui();
-        } else if (button.id == PREV_PAGE_BUTTON) {
-            currentPage--;
-            this.initGui();
-        } else {
-            handleConfigButton(button, false);
-        }
-    }
-
-    @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
-        super.mouseClicked(mouseX, mouseY, mouseButton);
-        
-        // Handle right-click for decreasing values
-        if (mouseButton == 1) { // Right click
-            for (GuiButton button : this.buttonList) {
-                if (button.mousePressed(this.mc, mouseX, mouseY)) {
-                    handleConfigButton(button, true);
-                    break;
-                }
-            }
-        }
-    }
-
     private void handleConfigButton(GuiButton button, boolean decrease) {
         // Check for shift key for fine adjustment
-        boolean isShiftPressed = org.lwjgl.input.Keyboard.isKeyDown(org.lwjgl.input.Keyboard.KEY_LSHIFT) ||
-                                org.lwjgl.input.Keyboard.isKeyDown(org.lwjgl.input.Keyboard.KEY_RSHIFT);
-        
+        boolean isShiftPressed = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) ||
+                                Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
+
         switch (button.id) {
             case TARGETING_RANGE_BUTTON:
                 float targetingIncrement = isShiftPressed ? 0.5f : 1.0f;
                 TargetingConfig.targetingRange = cycleValue((float)TargetingConfig.targetingRange, 5.0f, 50.0f, targetingIncrement, decrease);
-                button.displayString = "Targeting Range: " + String.format("%.1f", TargetingConfig.targetingRange);
+                button.displayString = "Targeting Range: " + formatValue(TargetingConfig.targetingRange);
                 break;
             case MAX_TRACKING_DISTANCE_BUTTON:
                 float trackingIncrement = isShiftPressed ? 1.0f : 5.0f;
                 TargetingConfig.maxTrackingDistance = cycleValue((float)TargetingConfig.maxTrackingDistance, 5.0f, 100.0f, trackingIncrement, decrease);
-                button.displayString = "Max Tracking Distance: " + String.format("%.1f", TargetingConfig.maxTrackingDistance);
+                button.displayString = "Max Tracking Distance: " + formatValue(TargetingConfig.maxTrackingDistance);
                 break;
             case DETECTION_ANGLE_BUTTON:
                 float angleIncrement = isShiftPressed ? 1.0f : 5.0f;
                 TargetingConfig.maxAngle = cycleValue((float)TargetingConfig.maxAngle, 15.0f, 180.0f, angleIncrement, decrease);
-                button.displayString = "Detection Angle: " + String.format("%.1f", TargetingConfig.maxAngle);
+                button.displayString = "Detection Angle: " + formatValue(TargetingConfig.maxAngle);
                 break;
             case RETICLE_SCALE_BUTTON:
                 float scaleIncrement = isShiftPressed ? 0.05f : 0.1f;
                 TargetingConfig.reticleScale = cycleValue(TargetingConfig.reticleScale, 0.5f, 3.0f, scaleIncrement, decrease);
-                button.displayString = "Reticle Scale: " + String.format("%.2f", TargetingConfig.reticleScale);
+                button.displayString = "Reticle Scale: " + formatValue(TargetingConfig.reticleScale);
                 break;
             case CAMERA_SMOOTHNESS_BUTTON:
                 float smoothnessIncrement = isShiftPressed ? 0.01f : 0.05f;
                 TargetingConfig.cameraSmoothness = cycleValue(TargetingConfig.cameraSmoothness, 0.01f, 1.0f, smoothnessIncrement, decrease);
-                button.displayString = "Camera Smoothness: " + String.format("%.2f", TargetingConfig.cameraSmoothness);
+                button.displayString = "Camera Smoothness: " + formatValue(TargetingConfig.cameraSmoothness);
                 break;
             case MAX_PITCH_BUTTON:
                 float pitchIncrement = isShiftPressed ? 1.0f : 5.0f;
                 TargetingConfig.maxPitchAdjustment = cycleValue(TargetingConfig.maxPitchAdjustment, 0.0f, 90.0f, pitchIncrement, decrease);
-                button.displayString = "Max Pitch: " + String.format("%.1f", TargetingConfig.maxPitchAdjustment);
+                button.displayString = "Max Pitch: " + formatValue(TargetingConfig.maxPitchAdjustment);
                 break;
             case MAX_YAW_BUTTON:
                 float yawIncrement = isShiftPressed ? 5.0f : 10.0f;
                 TargetingConfig.maxYawAdjustment = cycleValue(TargetingConfig.maxYawAdjustment, 0.0f, 180.0f, yawIncrement, decrease);
-                button.displayString = "Max Yaw: " + String.format("%.1f", TargetingConfig.maxYawAdjustment);
+                button.displayString = "Max Yaw: " + formatValue(TargetingConfig.maxYawAdjustment);
                 break;
             case BTP_INTENSITY_BUTTON:
                 float intensityIncrement = isShiftPressed ? 0.01f : 0.05f;
                 TargetingConfig.btpCameraIntensity = cycleValue(TargetingConfig.btpCameraIntensity, 0.0f, 1.0f, intensityIncrement, decrease);
-                button.displayString = "BTP Camera Intensity: " + String.format("%.2f", TargetingConfig.btpCameraIntensity);
+                button.displayString = "BTP Camera Intensity: " + formatValue(TargetingConfig.btpCameraIntensity);
                 break;
             case SOUND_VOLUME_BUTTON:
                 float volumeIncrement = isShiftPressed ? 0.01f : 0.05f;
                 TargetingConfig.soundVolume = cycleValue(TargetingConfig.soundVolume, 0.0f, 1.0f, volumeIncrement, decrease);
-                button.displayString = "Sound Volume: " + String.format("%.2f", TargetingConfig.soundVolume);
+                button.displayString = "Sound Volume: " + formatValue(TargetingConfig.soundVolume);
                 break;
             case UPDATE_FREQUENCY_BUTTON:
                 TargetingConfig.updateFrequency = (int)cycleValue((float)TargetingConfig.updateFrequency, 1.0f, 20.0f, 1.0f, decrease);
@@ -494,121 +608,144 @@ public class GuiTargetingConfig extends GuiScreen {
                 TargetingConfig.validationInterval = (int)cycleValue((float)TargetingConfig.validationInterval, 1.0f, 60.0f, intervalIncrement, decrease);
                 button.displayString = "Validation Interval: " + TargetingConfig.validationInterval;
                 break;
-            
+
             // Toggle buttons
             case REQUIRE_LOS_TOGGLE:
                 TargetingConfig.requireLineOfSight = !TargetingConfig.requireLineOfSight;
-                button.displayString = "Require Line of Sight: " + (TargetingConfig.requireLineOfSight ? "ON" : "OFF");
+                button.displayString = formatToggleText("Require Line of Sight", TargetingConfig.requireLineOfSight);
                 break;
             case SHOW_RETICLE_TOGGLE:
                 TargetingConfig.showReticle = !TargetingConfig.showReticle;
-                button.displayString = "Show Reticle: " + (TargetingConfig.showReticle ? "ON" : "OFF");
+                button.displayString = formatToggleText("Show Reticle", TargetingConfig.showReticle);
                 break;
             case SHOW_HEALTH_TOGGLE:
                 TargetingConfig.showHealthBar = !TargetingConfig.showHealthBar;
-                button.displayString = "Show Health Bar: " + (TargetingConfig.showHealthBar ? "ON" : "OFF");
+                button.displayString = formatToggleText("Show Health Bar", TargetingConfig.showHealthBar);
                 break;
             case SHOW_DISTANCE_TOGGLE:
                 TargetingConfig.showDistance = !TargetingConfig.showDistance;
-                button.displayString = "Show Distance: " + (TargetingConfig.showDistance ? "ON" : "OFF");
+                button.displayString = formatToggleText("Show Distance", TargetingConfig.showDistance);
                 break;
             case SHOW_NAME_TOGGLE:
                 TargetingConfig.showTargetName = !TargetingConfig.showTargetName;
-                button.displayString = "Show Target Name: " + (TargetingConfig.showTargetName ? "ON" : "OFF");
+                button.displayString = formatToggleText("Show Target Name", TargetingConfig.showTargetName);
                 break;
             case ENABLE_CAMERA_LOCKON_TOGGLE:
                 TargetingConfig.enableCameraLockOn = !TargetingConfig.enableCameraLockOn;
-                button.displayString = "Enable Camera Lock-On: " + (TargetingConfig.enableCameraLockOn ? "ON" : "OFF");
+                button.displayString = formatToggleText("Enable Camera Lock-On", TargetingConfig.enableCameraLockOn);
                 break;
             case AUTO_THIRD_PERSON_TOGGLE:
                 TargetingConfig.autoThirdPerson = !TargetingConfig.autoThirdPerson;
-                button.displayString = "Auto Third Person: " + (TargetingConfig.autoThirdPerson ? "ON" : "OFF");
+                button.displayString = formatToggleText("Auto Third Person", TargetingConfig.autoThirdPerson);
                 break;
             case BTP_MODE_TOGGLE:
                 cycleBtpMode();
                 button.displayString = "BTP Mode: " + TargetingConfig.btpCompatibilityMode.toUpperCase();
                 this.initGui(); // Refresh GUI to show/hide intensity slider
                 break;
+            case CAMERA_PRESET_BUTTON:
+                applyCameraPreset(decrease);
+                button.displayString = "Camera Feel: " + TargetingConfig.lockOnPreset.toUpperCase();
+                this.initGui();
+                break;
+            case CAMERA_FOCUS_OFFSET_BUTTON: {
+                float focusIncrement = isShiftPressed ? 0.05f : 0.1f;
+                TargetingConfig.cameraFocusYOffset = cycleValue(TargetingConfig.cameraFocusYOffset, -1.0f, 1.0f, focusIncrement, decrease);
+                button.displayString = "Focus Y Offset: " + formatValue(TargetingConfig.cameraFocusYOffset);
+                break;
+            }
+            case DEBUG_COMPAT_TOGGLE:
+                TargetingConfig.debugCompatibility = !TargetingConfig.debugCompatibility;
+                button.displayString = formatToggleText("Debug Compatibility Log", TargetingConfig.debugCompatibility);
+                break;
+            case PER_MODE_SMOOTHING_TOGGLE:
+                TargetingConfig.perModeSmoothingEnabled = !TargetingConfig.perModeSmoothingEnabled;
+                button.displayString = formatToggleText("Gentler 1st-Person Smoothing", TargetingConfig.perModeSmoothingEnabled);
+                break;
+            case TARGET_PRIORITY_BUTTON:
+                cycleTargetPriority(decrease);
+                button.displayString = "Target Priority: " + TargetingConfig.targetPriority.toUpperCase();
+                break;
             case TARGET_HOSTILES_TOGGLE:
                 TargetingConfig.targetHostileMobs = !TargetingConfig.targetHostileMobs;
-                button.displayString = "Target Hostile Mobs: " + (TargetingConfig.targetHostileMobs ? "ON" : "OFF");
+                button.displayString = formatToggleText("Target Hostile Mobs", TargetingConfig.targetHostileMobs);
                 break;
             case TARGET_NEUTRALS_TOGGLE:
                 TargetingConfig.targetNeutralMobs = !TargetingConfig.targetNeutralMobs;
-                button.displayString = "Target Neutral Mobs: " + (TargetingConfig.targetNeutralMobs ? "ON" : "OFF");
+                button.displayString = formatToggleText("Target Neutral Mobs", TargetingConfig.targetNeutralMobs);
                 break;
             case TARGET_PASSIVES_TOGGLE:
                 TargetingConfig.targetPassiveMobs = !TargetingConfig.targetPassiveMobs;
-                button.displayString = "Target Passive Mobs: " + (TargetingConfig.targetPassiveMobs ? "ON" : "OFF");
+                button.displayString = formatToggleText("Target Passive Mobs", TargetingConfig.targetPassiveMobs);
                 break;
             case ENABLE_SOUNDS_TOGGLE:
                 TargetingConfig.enableSounds = !TargetingConfig.enableSounds;
-                button.displayString = "Enable Sounds: " + (TargetingConfig.enableSounds ? "ON" : "OFF");
+                button.displayString = formatToggleText("Enable Sounds", TargetingConfig.enableSounds);
                 break;
-            
+
             // Enhanced Audio Settings toggles
             case ENABLE_TARGET_LOCK_SOUND_TOGGLE:
                 TargetingConfig.enableTargetLockSound = !TargetingConfig.enableTargetLockSound;
-                button.displayString = "Target Lock Sound: " + (TargetingConfig.enableTargetLockSound ? "ON" : "OFF");
+                button.displayString = formatToggleText("Target Lock Sound", TargetingConfig.enableTargetLockSound);
                 break;
             case ENABLE_TARGET_SWITCH_SOUND_TOGGLE:
                 TargetingConfig.enableTargetSwitchSound = !TargetingConfig.enableTargetSwitchSound;
-                button.displayString = "Target Switch Sound: " + (TargetingConfig.enableTargetSwitchSound ? "ON" : "OFF");
+                button.displayString = formatToggleText("Target Switch Sound", TargetingConfig.enableTargetSwitchSound);
                 break;
             case ENABLE_LETHAL_TARGET_SOUND_TOGGLE:
                 TargetingConfig.enableLethalTargetSound = !TargetingConfig.enableLethalTargetSound;
-                button.displayString = "Lethal Target Sound: " + (TargetingConfig.enableLethalTargetSound ? "ON" : "OFF");
+                button.displayString = formatToggleText("Lethal Target Sound", TargetingConfig.enableLethalTargetSound);
                 break;
             case ENABLE_TARGET_LOST_SOUND_TOGGLE:
                 TargetingConfig.enableTargetLostSound = !TargetingConfig.enableTargetLostSound;
-                button.displayString = "Target Lost Sound: " + (TargetingConfig.enableTargetLostSound ? "ON" : "OFF");
+                button.displayString = formatToggleText("Target Lost Sound", TargetingConfig.enableTargetLostSound);
                 break;
-            
+
             // Enhanced Audio Volume buttons
             case TARGET_LOCK_VOLUME_BUTTON:
                 float lockVolumeIncrement = isShiftPressed ? 0.01f : 0.05f;
                 TargetingConfig.targetLockVolume = cycleValue(TargetingConfig.targetLockVolume, 0.0f, 1.0f, lockVolumeIncrement, decrease);
-                button.displayString = "Target Lock Volume: " + String.format("%.2f", TargetingConfig.targetLockVolume);
+                button.displayString = "Target Lock Volume: " + formatValue(TargetingConfig.targetLockVolume);
                 break;
             case TARGET_SWITCH_VOLUME_BUTTON:
                 float switchVolumeIncrement = isShiftPressed ? 0.01f : 0.05f;
                 TargetingConfig.targetSwitchVolume = cycleValue(TargetingConfig.targetSwitchVolume, 0.0f, 1.0f, switchVolumeIncrement, decrease);
-                button.displayString = "Target Switch Volume: " + String.format("%.2f", TargetingConfig.targetSwitchVolume);
+                button.displayString = "Target Switch Volume: " + formatValue(TargetingConfig.targetSwitchVolume);
                 break;
             case LETHAL_TARGET_VOLUME_BUTTON:
                 float lethalVolumeIncrement = isShiftPressed ? 0.01f : 0.05f;
                 TargetingConfig.lethalTargetVolume = cycleValue(TargetingConfig.lethalTargetVolume, 0.0f, 1.0f, lethalVolumeIncrement, decrease);
-                button.displayString = "Lethal Target Volume: " + String.format("%.2f", TargetingConfig.lethalTargetVolume);
+                button.displayString = "Lethal Target Volume: " + formatValue(TargetingConfig.lethalTargetVolume);
                 break;
             case TARGET_LOST_VOLUME_BUTTON:
                 float lostVolumeIncrement = isShiftPressed ? 0.01f : 0.05f;
                 TargetingConfig.targetLostVolume = cycleValue(TargetingConfig.targetLostVolume, 0.0f, 1.0f, lostVolumeIncrement, decrease);
-                button.displayString = "Target Lost Volume: " + String.format("%.2f", TargetingConfig.targetLostVolume);
+                button.displayString = "Target Lost Volume: " + formatValue(TargetingConfig.targetLostVolume);
                 break;
-            
+
             // Enhanced Visual Feedback toggles
             case SHOW_DAMAGE_PREDICTION_TOGGLE:
                 TargetingConfig.showDamagePrediction = !TargetingConfig.showDamagePrediction;
-                button.displayString = "Show Damage Prediction: " + (TargetingConfig.showDamagePrediction ? "ON" : "OFF");
+                button.displayString = formatToggleText("Show Damage Prediction", TargetingConfig.showDamagePrediction);
                 break;
             case SHOW_HITS_TO_KILL_TOGGLE:
                 TargetingConfig.showHitsToKill = !TargetingConfig.showHitsToKill;
-                button.displayString = "Show Hits to Kill: " + (TargetingConfig.showHitsToKill ? "ON" : "OFF");
+                button.displayString = formatToggleText("Show Hits to Kill", TargetingConfig.showHitsToKill);
                 break;
             case SHOW_VULNERABILITIES_TOGGLE:
                 TargetingConfig.showVulnerabilities = !TargetingConfig.showVulnerabilities;
-                button.displayString = "Show Vulnerabilities: " + (TargetingConfig.showVulnerabilities ? "ON" : "OFF");
+                button.displayString = formatToggleText("Show Vulnerabilities", TargetingConfig.showVulnerabilities);
                 break;
             case HIGHLIGHT_LETHAL_TARGETS_TOGGLE:
                 TargetingConfig.highlightLethalTargets = !TargetingConfig.highlightLethalTargets;
-                button.displayString = "Highlight Lethal Targets: " + (TargetingConfig.highlightLethalTargets ? "ON" : "OFF");
+                button.displayString = formatToggleText("Highlight Lethal Targets", TargetingConfig.highlightLethalTargets);
                 break;
             case DAMAGE_PREDICTION_SCALE_BUTTON:
                 float scaleIncrement2 = isShiftPressed ? 0.05f : 0.1f;
                 TargetingConfig.damagePredictionScale = cycleValue(TargetingConfig.damagePredictionScale, 0.5f, 2.0f, scaleIncrement2, decrease);
-                button.displayString = "Damage Text Scale: " + String.format("%.2f", TargetingConfig.damagePredictionScale);
+                button.displayString = "Damage Text Scale: " + formatValue(TargetingConfig.damagePredictionScale);
                 break;
-            
+
             // Advanced Sound Tweaking controls
             case SOUND_THEME_BUTTON:
                 cycleSoundTheme();
@@ -616,40 +753,40 @@ public class GuiTargetingConfig extends GuiScreen {
                 break;
             case ENABLE_SOUND_VARIETY_TOGGLE:
                 TargetingConfig.enableSoundVariety = !TargetingConfig.enableSoundVariety;
-                button.displayString = "Sound Variety: " + (TargetingConfig.enableSoundVariety ? "ON" : "OFF");
+                button.displayString = formatToggleText("Sound Variety", TargetingConfig.enableSoundVariety);
                 break;
-            
+
             // Pitch controls
             case TARGET_LOCK_PITCH_BUTTON:
                 float lockPitchIncrement = isShiftPressed ? 0.05f : 0.1f;
                 TargetingConfig.targetLockPitch = cycleValue(TargetingConfig.targetLockPitch, 0.5f, 2.0f, lockPitchIncrement, decrease);
-                button.displayString = "Target Lock Pitch: " + String.format("%.2f", TargetingConfig.targetLockPitch);
+                button.displayString = "Target Lock Pitch: " + formatValue(TargetingConfig.targetLockPitch);
                 break;
             case TARGET_SWITCH_PITCH_BUTTON:
                 float switchPitchIncrement = isShiftPressed ? 0.05f : 0.1f;
                 TargetingConfig.targetSwitchPitch = cycleValue(TargetingConfig.targetSwitchPitch, 0.5f, 2.0f, switchPitchIncrement, decrease);
-                button.displayString = "Target Switch Pitch: " + String.format("%.2f", TargetingConfig.targetSwitchPitch);
+                button.displayString = "Target Switch Pitch: " + formatValue(TargetingConfig.targetSwitchPitch);
                 break;
             case LETHAL_TARGET_PITCH_BUTTON:
                 float lethalPitchIncrement = isShiftPressed ? 0.05f : 0.1f;
                 TargetingConfig.lethalTargetPitch = cycleValue(TargetingConfig.lethalTargetPitch, 0.5f, 2.0f, lethalPitchIncrement, decrease);
-                button.displayString = "Lethal Target Pitch: " + String.format("%.2f", TargetingConfig.lethalTargetPitch);
+                button.displayString = "Lethal Target Pitch: " + formatValue(TargetingConfig.lethalTargetPitch);
                 break;
             case TARGET_LOST_PITCH_BUTTON:
                 float lostPitchIncrement = isShiftPressed ? 0.05f : 0.1f;
                 TargetingConfig.targetLostPitch = cycleValue(TargetingConfig.targetLostPitch, 0.5f, 2.0f, lostPitchIncrement, decrease);
-                button.displayString = "Target Lost Pitch: " + String.format("%.2f", TargetingConfig.targetLostPitch);
+                button.displayString = "Target Lost Pitch: " + formatValue(TargetingConfig.targetLostPitch);
                 break;
-            
+
             // Damage Numbers Configuration handlers
             case ENABLE_DAMAGE_NUMBERS_TOGGLE:
                 TargetingConfig.enableDamageNumbers = !TargetingConfig.enableDamageNumbers;
-                button.displayString = "Enable Damage Numbers: " + (TargetingConfig.enableDamageNumbers ? "ON" : "OFF");
+                button.displayString = formatToggleText("Enable Damage Numbers", TargetingConfig.enableDamageNumbers);
                 break;
             case DAMAGE_NUMBERS_SCALE_BUTTON:
                 float damageScaleIncrement = isShiftPressed ? 0.05f : 0.1f;
                 TargetingConfig.damageNumbersScale = cycleValue(TargetingConfig.damageNumbersScale, 0.5f, 3.0f, damageScaleIncrement, decrease);
-                button.displayString = "Damage Numbers Scale: " + String.format("%.2f", TargetingConfig.damageNumbersScale);
+                button.displayString = "Damage Numbers Scale: " + formatValue(TargetingConfig.damageNumbersScale);
                 break;
             case DAMAGE_NUMBERS_DURATION_BUTTON:
                 float durationIncrement = isShiftPressed ? 5.0f : 10.0f;
@@ -659,19 +796,27 @@ public class GuiTargetingConfig extends GuiScreen {
             case DAMAGE_NUMBERS_OFFSET_BUTTON:
                 float offsetIncrement = isShiftPressed ? 0.05f : 0.1f;
                 TargetingConfig.damageNumbersOffset = cycleValue(TargetingConfig.damageNumbersOffset, 0.0f, 2.0f, offsetIncrement, decrease);
-                button.displayString = "Vertical Offset: " + String.format("%.2f", TargetingConfig.damageNumbersOffset);
+                button.displayString = "Vertical Offset: " + formatValue(TargetingConfig.damageNumbersOffset);
                 break;
             case DAMAGE_NUMBERS_CRITS_TOGGLE:
                 TargetingConfig.damageNumbersCrits = !TargetingConfig.damageNumbersCrits;
-                button.displayString = "Critical Hit Effects: " + (TargetingConfig.damageNumbersCrits ? "ON" : "OFF");
+                button.displayString = formatToggleText("Critical Hit Effects", TargetingConfig.damageNumbersCrits);
                 break;
             case DAMAGE_NUMBERS_COLORS_TOGGLE:
                 TargetingConfig.damageNumbersColors = !TargetingConfig.damageNumbersColors;
-                button.displayString = "Colored Damage Numbers: " + (TargetingConfig.damageNumbersColors ? "ON" : "OFF");
+                button.displayString = formatToggleText("Colored Damage Numbers", TargetingConfig.damageNumbersColors);
                 break;
             case DAMAGE_NUMBERS_FADEOUT_TOGGLE:
                 TargetingConfig.damageNumbersFadeOut = !TargetingConfig.damageNumbersFadeOut;
-                button.displayString = "Fade-Out Animation: " + (TargetingConfig.damageNumbersFadeOut ? "ON" : "OFF");
+                button.displayString = formatToggleText("Fade-Out Animation", TargetingConfig.damageNumbersFadeOut);
+                break;
+            case DAMAGE_NUMBERS_MOTION_BUTTON:
+                cycleDamageMotion(decrease);
+                button.displayString = "Number Motion: " + TargetingConfig.damageNumbersMotion.toUpperCase();
+                break;
+            case CRIT_EMPHASIS_TOGGLE:
+                TargetingConfig.critEmphasis = !TargetingConfig.critEmphasis;
+                button.displayString = formatToggleText("Crit Pop Emphasis", TargetingConfig.critEmphasis);
                 break;
             case DAMAGE_NUMBERS_COLOR_BUTTON:
                 cycleDamageNumberColor("default");
@@ -689,9 +834,10 @@ public class GuiTargetingConfig extends GuiScreen {
                 button.displayString = "Lethal Color: " + lethalColorHex;
                 break;
         }
-        
+
         // Automatically save config after any change
         TargetingConfig.saveConfig();
+        this.initGui();
     }
 
     private float cycleValue(float currentValue, float minValue, float maxValue, float increment, boolean decrease) {
@@ -709,7 +855,60 @@ public class GuiTargetingConfig extends GuiScreen {
         }
         return newValue;
     }
-    
+
+    private void cycleDamageMotion(boolean reverse) {
+        String[] modes = {"default", "subtle", "arcade"};
+        int idx = 0;
+        for (int i = 0; i < modes.length; i++) {
+            if (modes[i].equals(TargetingConfig.damageNumbersMotion)) { idx = i; break; }
+        }
+        idx = reverse ? (idx + modes.length - 1) % modes.length : (idx + 1) % modes.length;
+        TargetingConfig.damageNumbersMotion = modes[idx];
+    }
+
+    private void cycleTargetPriority(boolean reverse) {
+        String[] priorities = {"nearest", "health", "threat", "angle"};
+        int idx = 0;
+        for (int i = 0; i < priorities.length; i++) {
+            if (priorities[i].equals(TargetingConfig.targetPriority)) {
+                idx = i;
+                break;
+            }
+        }
+        idx = reverse ? (idx + priorities.length - 1) % priorities.length : (idx + 1) % priorities.length;
+        TargetingConfig.targetPriority = priorities[idx];
+    }
+
+    private void applyCameraPreset(boolean reverse) {
+        String[] presets = {"cinematic", "balanced", "snappy"};
+        int idx = 0;
+        for (int i = 0; i < presets.length; i++) {
+            if (presets[i].equals(TargetingConfig.lockOnPreset)) {
+                idx = i;
+                break;
+            }
+        }
+        idx = reverse ? (idx + presets.length - 1) % presets.length : (idx + 1) % presets.length;
+        TargetingConfig.lockOnPreset = presets[idx];
+        switch (TargetingConfig.lockOnPreset) {
+            case "cinematic":
+                TargetingConfig.cameraSmoothness = 0.15f;
+                TargetingConfig.maxPitchAdjustment = 40.0f;
+                TargetingConfig.maxYawAdjustment = 60.0f;
+                break;
+            case "snappy":
+                TargetingConfig.cameraSmoothness = 0.75f;
+                TargetingConfig.maxPitchAdjustment = 75.0f;
+                TargetingConfig.maxYawAdjustment = 120.0f;
+                break;
+            default: // balanced
+                TargetingConfig.cameraSmoothness = 0.4f;
+                TargetingConfig.maxPitchAdjustment = 60.0f;
+                TargetingConfig.maxYawAdjustment = 90.0f;
+                break;
+        }
+    }
+
     private void cycleBtpMode() {
         switch (TargetingConfig.btpCompatibilityMode) {
             case "disabled":
@@ -728,7 +927,7 @@ public class GuiTargetingConfig extends GuiScreen {
         // Save config after BTP mode change
         TargetingConfig.saveConfig();
     }
-    
+
     private void cycleDamageNumberColor(String colorType) {
         // Define common color options as RGB integers
         int[] colorOptions = {
@@ -749,7 +948,7 @@ public class GuiTargetingConfig extends GuiScreen {
             0xAA66FF, // Purple
             0x66FFAA  // Light Cyan
         };
-        
+
         int currentColor;
         switch (colorType) {
             case "critical":
@@ -762,7 +961,7 @@ public class GuiTargetingConfig extends GuiScreen {
                 currentColor = TargetingConfig.damageNumbersColor;
                 break;
         }
-        
+
         // Find current color index
         int currentIndex = 0;
         for (int i = 0; i < colorOptions.length; i++) {
@@ -771,11 +970,11 @@ public class GuiTargetingConfig extends GuiScreen {
                 break;
             }
         }
-        
+
         // Cycle to next color
         int nextIndex = (currentIndex + 1) % colorOptions.length;
         int nextColor = colorOptions[nextIndex];
-        
+
         // Apply the new color
         switch (colorType) {
             case "critical":
@@ -788,49 +987,152 @@ public class GuiTargetingConfig extends GuiScreen {
                 TargetingConfig.damageNumbersColor = nextColor;
                 break;
         }
-        
+
         TargetingConfig.saveConfig();
     }
 
     @Override
+    protected void actionPerformed(@Nonnull GuiButton button) throws IOException {
+        if (button.id == DONE_BUTTON) {
+            TargetingConfig.saveConfig();
+            this.mc.displayGuiScreen(this.parentScreen);
+            return;
+        }
+        if (button.id == RESET_BUTTON) {
+            TargetingConfig.resetToDefaults();
+            this.initGui();
+            return;
+        }
+        if (button.id == NEXT_PAGE_BUTTON) {
+            currentPage++;
+            this.initGui();
+            return;
+        }
+        if (button.id == PREV_PAGE_BUTTON) {
+            currentPage--;
+            this.initGui();
+            return;
+        }
+
+        handleConfigButton(button, false);
+    }
+
+    @SuppressWarnings("null")
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+
+        if (this.mc == null) {
+            return;
+        }
+
+        // Handle right-click for decreasing values
+        if (mouseButton == 1) {
+            GuiButton clicked = null;
+            for (GuiButton button : this.buttonList) {
+                if (button.mousePressed(this.mc, mouseX, mouseY)) {
+                    clicked = button;
+                    break;
+                }
+            }
+            if (clicked != null) {
+                handleConfigButton(clicked, true);
+            }
+        }
+    }
+
+    @Nonnull
+    private String getCurrentPageTitle() {
+        String title = currentPage >= 0 && currentPage < PAGE_TITLES.length
+            ? PAGE_TITLES[currentPage] : "§6Configuration";
+        return title == null ? "§6Configuration" : title;
+    }
+
+    @Nonnull
+    private String getCurrentPageDescription() {
+        String description = currentPage >= 0 && currentPage < PAGE_DESCRIPTIONS.length
+            ? PAGE_DESCRIPTIONS[currentPage] : "§7Adjust settings";
+        return description == null ? "§7Adjust settings" : description;
+    }
+
+    @SuppressWarnings("null")
+    @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         this.drawDefaultBackground();
-        
+
         // Draw title
         String title = "Zelda Targeting Configuration";
         this.drawCenteredString(this.fontRenderer, title, this.width / 2, 20, 0xFFFFFF);
-        
-        // Draw page indicator
-        String pageInfo = "Page " + (currentPage + 1) + " of " + totalPages;
-        this.drawCenteredString(this.fontRenderer, pageInfo, this.width / 2, 35, 0xAAAAAA);
-        
+
+        // Draw dot-based page indicator — shows all pages and current position at a glance
+        StringBuilder pageDotsBuf = new StringBuilder();
+        for (int i = 0; i < totalPages; i++) {
+            pageDotsBuf.append(i == currentPage ? "\u00a7f\u25cf " : "\u00a77\u25cb ");
+        }
+        @SuppressWarnings("null")
+        String pageDotsStr = pageDotsBuf.toString().trim();
+        this.drawCenteredString(this.fontRenderer, pageDotsStr, this.width / 2, 35, 0xFFFFFF);
+
         // Draw Better Third Person compatibility info if detected
         if (ZeldaTargetingMod.isBetterThirdPersonLoaded()) {
             String btpMessage = "§eBetter Third Person detected - Mode: " + TargetingConfig.btpCompatibilityMode.toUpperCase();
             this.drawCenteredString(this.fontRenderer, btpMessage, this.width / 2, 45, 0xFFAA00);
         }
-        
-        // Draw section headers based on current page
+
+        // Draw section headers and interaction hints
         int centerX = this.width / 2;
-        switch (currentPage) {
-            case 0:
-                this.drawCenteredString(this.fontRenderer, "§6Targeting & Visual Settings", centerX, 55, 0xFFAA00);
-                break;
-            case 1:
-                this.drawCenteredString(this.fontRenderer, "§6Camera Settings", centerX, 55, 0xFFAA00);
-                break;
-            case 2:
-                this.drawCenteredString(this.fontRenderer, "§6Entity Filtering & Basic Audio", centerX, 55, 0xFFAA00);
-                break;
-            case 3:
-                this.drawCenteredString(this.fontRenderer, "§6Advanced Sound Tweaking", centerX, 55, 0xFFAA00);
-                break;
-            case 4:
-                this.drawCenteredString(this.fontRenderer, "§6Damage Numbers Configuration", centerX, 55, 0xFFAA00);
-                break;
-        }
-        
+        this.drawCenteredString(this.fontRenderer, getCurrentPageTitle(), centerX, 55, 0xFFAA00);
+        this.drawCenteredString(this.fontRenderer, getCurrentPageDescription(), centerX, 66, 0xB8BDC2);
+        this.drawCenteredString(this.fontRenderer, INTERACTION_HINT, centerX, 76, 0x9EA4AA);
+
         super.drawScreen(mouseX, mouseY, partialTicks);
+        drawButtonTooltip(mouseX, mouseY);
+    }
+
+    private void drawButtonTooltip(int mouseX, int mouseY) {
+        for (GuiButton button : this.buttonList) {
+            if (button.visible && mouseX >= button.x && mouseX < button.x + button.width
+                    && mouseY >= button.y && mouseY < button.y + button.height) {
+                List<String> tooltip = getTooltip(button.id);
+                if (!tooltip.isEmpty()) {
+                    this.drawHoveringText(tooltip, mouseX, mouseY);
+                }
+                return;
+            }
+        }
+    }
+
+    private List<String> getTooltip(int buttonId) {
+        switch (buttonId) {
+            case TARGETING_RANGE_BUTTON:
+                return Arrays.asList("How far lock-on can acquire targets.", "Higher values may feel less focused.");
+            case MAX_TRACKING_DISTANCE_BUTTON:
+                return Arrays.asList("Distance where an active lock breaks.", "Set above targeting range for smoother chase behavior.");
+            case DETECTION_ANGLE_BUTTON:
+                return Arrays.asList("Field-of-view cone used for detection.", "Smaller = stricter forward targeting.");
+            case CAMERA_SMOOTHNESS_BUTTON:
+                return Arrays.asList("Camera follow responsiveness.", "Lower = smoother / slower, higher = snappier.");
+            case BTP_MODE_TOGGLE:
+                return Arrays.asList("Better Third Person compatibility mode.", "GENTLE keeps lock-on feel while reducing camera conflict.");
+            case BTP_INTENSITY_BUTTON:
+                return Arrays.asList("Only active in GENTLE mode.", "Controls how strongly lock-on moves the camera.");
+            case ENABLE_SOUNDS_TOGGLE:
+                return Arrays.asList("Master audio switch.", "When OFF, detailed audio controls are disabled.");
+            case SOUND_THEME_BUTTON:
+                return Arrays.asList("Cycles sound style presets.", "Try with Sound Variety for more variation.");
+            case ENABLE_DAMAGE_NUMBERS_TOGGLE:
+                return Arrays.asList("Master switch for floating damage text.", "When OFF, damage-number options are disabled.");
+            case DAMAGE_NUMBERS_COLORS_TOGGLE:
+                return Arrays.asList("Use dynamic damage text colors.", "Turn OFF for one consistent color.");
+            case SHOW_HITS_TO_KILL_TOGGLE:
+                return Arrays.asList("Shows estimated hits needed to defeat target.", "Displayed in polished HUD when available.");
+            case DONE_BUTTON:
+                return Collections.singletonList("Save configuration and close this menu.");
+            case RESET_BUTTON:
+                return Collections.singletonList("Reset all targeting settings to default values.");
+            default:
+                return Collections.singletonList("Tip: LMB increase/toggle, RMB decrease, Shift for finer adjustments.");
+        }
     }
 
     @Override
