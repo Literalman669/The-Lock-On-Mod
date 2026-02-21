@@ -20,9 +20,14 @@ public class DamageCalculator {
     private static final Minecraft mc = Minecraft.getMinecraft();
     
     /**
-     * Calculate the damage that would be dealt to the target entity with the current weapon
+     * Calculate the damage that would be dealt to the target entity with the current weapon.
+     * Uses real post-armor damage from LivingDamageEvent when available; falls back to manual estimate.
      */
     public static float calculateDamage(Entity target) {
+        if (DamageEventListener.hasDamageData(target)) {
+            return DamageEventListener.getLastDamage(target);
+        }
+
         EntityPlayer player = mc.player;
         if (player == null || !(target instanceof EntityLiving)) {
             return 0.0f;
@@ -30,11 +35,17 @@ public class DamageCalculator {
         
         ItemStack heldItem = player.getHeldItemMainhand();
         if (heldItem.isEmpty()) {
-            // Base hand damage
             return calculateBaseDamage(player, (EntityLiving) target);
         }
         
         return calculateWeaponDamage(player, (EntityLiving) target, heldItem);
+    }
+
+    /**
+     * Returns true if the damage value is a real observed hit (not a manual estimate).
+     */
+    public static boolean isRealDamageData(Entity target) {
+        return DamageEventListener.hasDamageData(target);
     }
     
     /**
@@ -72,12 +83,13 @@ public class DamageCalculator {
         float targetHealth = ((EntityLiving) target).getHealth();
         int hitsToKill = (int) Math.ceil(targetHealth / damage);
         
+        String prefix = isRealDamageData(target) ? "" : "~";
         if (hitsToKill == 1) {
-            return String.format("%.1f dmg (LETHAL)", damage);
+            return String.format("%s%.1f dmg (LETHAL)", prefix, damage);
         } else if (hitsToKill <= 99) {
-            return String.format("%.1f dmg (%d hits)", damage, hitsToKill);
+            return String.format("%s%.1f dmg (%d hits)", prefix, damage, hitsToKill);
         } else {
-            return String.format("%.1f dmg", damage);
+            return String.format("%s%.1f dmg", prefix, damage);
         }
     }
     
