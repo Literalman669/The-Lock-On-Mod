@@ -38,7 +38,7 @@ public class ZeldaTargetingMod {
         logger.info("Zelda Targeting Mod - Pre-Initialization");
         
 // Check for Better Third Person compatibility
-betterThirdPersonLoaded = Loader.isModLoaded("betterthirdperson");
+        betterThirdPersonLoaded = Loader.isModLoaded("betterthirdperson");
         if (betterThirdPersonLoaded) {
             logger.info("Better Third Person detected - Camera lock-on will be disabled to prevent conflicts");
         }
