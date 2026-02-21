@@ -303,7 +303,7 @@ public class TargetRenderer {
 
         // Compact mode: skip all stat lines
         if (TargetingConfig.compactHudMode) {
-            renderCompactHud(target, screenWidth, "Locked Target", isLiving, health, maxHealth, healthRatio, isLethal, accentColor);
+            renderCompactHud(target, screenWidth, screenHeight, "Locked Target", isLiving, health, maxHealth, healthRatio, isLethal, accentColor);
             return;
         }
 
@@ -362,11 +362,9 @@ public class TargetRenderer {
         panelHeight += statLines.size() * HUD_VALUE_GAP;
         panelHeight += HUD_PADDING - 2;
 
-        int panelX = Math.max(HUD_MARGIN, screenWidth - panelWidth - HUD_MARGIN);
-        int panelY = HUD_MARGIN;
-        if (panelY + panelHeight > screenHeight - HUD_MARGIN) {
-            panelY = Math.max(HUD_MARGIN, screenHeight - panelHeight - HUD_MARGIN);
-        }
+        int[] pos = calcHudPosition(screenWidth, screenHeight, panelWidth, panelHeight);
+        int panelX = pos[0];
+        int panelY = pos[1];
 
         Gui.drawRect(panelX + 1, panelY + 1, panelX + panelWidth + 1, panelY + panelHeight + 1, HUD_SHADOW_COLOR);
         Gui.drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, HUD_BG_COLOR);
@@ -412,7 +410,7 @@ public class TargetRenderer {
     }
 
     @SuppressWarnings("null")
-    private void renderCompactHud(Entity target, int screenWidth, String titleText,
+    private void renderCompactHud(Entity target, int screenWidth, int screenHeight, String titleText,
             boolean isLiving, float health, float maxHealth, float healthRatio,
             boolean isLethal, int accentColor) {
         int panelWidth = Math.max(HUD_MIN_WIDTH, Math.max(
@@ -422,8 +420,9 @@ public class TargetRenderer {
             + (isLiving && TargetingConfig.showHealthBar ? HUD_HEALTH_BLOCK_HEIGHT : 0)
             + HUD_PADDING - 2;
 
-        int panelX = Math.max(HUD_MARGIN, screenWidth - panelWidth - HUD_MARGIN);
-        int panelY = HUD_MARGIN;
+        int[] pos = calcHudPosition(screenWidth, screenHeight, panelWidth, panelHeight);
+        int panelX = pos[0];
+        int panelY = pos[1];
 
         Gui.drawRect(panelX + 1, panelY + 1, panelX + panelWidth + 1, panelY + panelHeight + 1, HUD_SHADOW_COLOR);
         Gui.drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, HUD_BG_COLOR);
@@ -451,6 +450,37 @@ public class TargetRenderer {
                 Gui.drawRect(textX, currentY, textX + HUD_BAR_WIDTH, currentY + 4, ((int)(pulse * 180) << 24) | 0xFF2020);
             }
         }
+    }
+
+    private int[] calcHudPosition(int screenWidth, int screenHeight, int panelWidth, int panelHeight) {
+        int ox = TargetingConfig.hudOffsetX;
+        int oy = TargetingConfig.hudOffsetY;
+        int x, y;
+        switch (TargetingConfig.hudAnchor) {
+            case "top-left":
+                x = HUD_MARGIN + ox;
+                y = HUD_MARGIN + oy;
+                break;
+            case "bottom-left":
+                x = HUD_MARGIN + ox;
+                y = screenHeight - panelHeight - HUD_MARGIN + oy;
+                break;
+            case "bottom-right":
+                x = screenWidth - panelWidth - HUD_MARGIN + ox;
+                y = screenHeight - panelHeight - HUD_MARGIN + oy;
+                break;
+            case "center":
+                x = (screenWidth - panelWidth) / 2 + ox;
+                y = (screenHeight - panelHeight) / 2 + oy;
+                break;
+            default: // top-right
+                x = screenWidth - panelWidth - HUD_MARGIN + ox;
+                y = HUD_MARGIN + oy;
+                break;
+        }
+        x = Math.max(0, Math.min(screenWidth - panelWidth, x));
+        y = Math.max(0, Math.min(screenHeight - panelHeight, y));
+        return new int[]{x, y};
     }
 
     @SuppressWarnings("null")

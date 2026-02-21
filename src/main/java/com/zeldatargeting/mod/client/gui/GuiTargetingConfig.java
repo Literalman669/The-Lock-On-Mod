@@ -120,6 +120,9 @@ public class GuiTargetingConfig extends GuiScreen {
     private static final int SOFT_AIM_TOGGLE = 160;
     private static final int TARGET_HISTORY_TOGGLE = 161;
     private static final int BOSS_STYLE_PANEL_TOGGLE = 162;
+    private static final int HUD_ANCHOR_BUTTON = 163;
+    private static final int HUD_OFFSET_X_BUTTON = 164;
+    private static final int HUD_OFFSET_Y_BUTTON = 165;
 
     public GuiTargetingConfig(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -240,6 +243,21 @@ public class GuiTargetingConfig extends GuiScreen {
 
                 addToggleButton(BOSS_STYLE_PANEL_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Boss-Style Panel", TargetingConfig.bossStylePanel);
+                currentY += 24 + 10;
+                sectionLabel2 = "\u00a78\u2014 HUD Position \u2014";
+                sectionLabelY2 = currentY - 6;
+                currentY += 4;
+
+                addHudAnchorButton(HUD_ANCHOR_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        TargetingConfig.hudAnchor);
+                currentY += 24;
+
+                addValueButton(HUD_OFFSET_X_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "HUD Offset X", (float)TargetingConfig.hudOffsetX, -500.0f, 500.0f, 5.0f);
+                currentY += 24;
+
+                addValueButton(HUD_OFFSET_Y_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "HUD Offset Y", (float)TargetingConfig.hudOffsetY, -500.0f, 500.0f, 5.0f);
                 break;
 
             case 2: // Camera
@@ -487,6 +505,11 @@ public class GuiTargetingConfig extends GuiScreen {
         String displayText = "Target Priority: " + currentPriority.toUpperCase();
         GuiButton button = new GuiButton(id, x, y, width, height, displayText);
         this.buttonList.add(button);
+    }
+
+    private void addHudAnchorButton(int id, int x, int y, int width, int height, String currentAnchor) {
+        String displayText = "HUD Position: " + currentAnchor.toUpperCase().replace("-", " ");
+        this.buttonList.add(new GuiButton(id, x, y, width, height, displayText));
     }
 
     private void addDamageMotionButton(int id, int x, int y, int width, int height, String currentMotion) {
@@ -860,6 +883,22 @@ public class GuiTargetingConfig extends GuiScreen {
                 TargetingConfig.bossStylePanel = !TargetingConfig.bossStylePanel;
                 button.displayString = formatToggleText("Boss-Style Panel", TargetingConfig.bossStylePanel);
                 break;
+            case HUD_ANCHOR_BUTTON:
+                cycleHudAnchor(decrease);
+                button.displayString = "HUD Position: " + TargetingConfig.hudAnchor.toUpperCase().replace("-", " ");
+                break;
+            case HUD_OFFSET_X_BUTTON: {
+                float incX = isShiftPressed ? 1.0f : 5.0f;
+                TargetingConfig.hudOffsetX = (int) cycleValue((float) TargetingConfig.hudOffsetX, -500.0f, 500.0f, incX, decrease);
+                button.displayString = "HUD Offset X: " + TargetingConfig.hudOffsetX;
+                break;
+            }
+            case HUD_OFFSET_Y_BUTTON: {
+                float incY = isShiftPressed ? 1.0f : 5.0f;
+                TargetingConfig.hudOffsetY = (int) cycleValue((float) TargetingConfig.hudOffsetY, -500.0f, 500.0f, incY, decrease);
+                button.displayString = "HUD Offset Y: " + TargetingConfig.hudOffsetY;
+                break;
+            }
             case DAMAGE_NUMBERS_COLOR_BUTTON:
                 cycleDamageNumberColor("default");
                 String defaultColorHex = String.format("#%06X", TargetingConfig.damageNumbersColor & 0xFFFFFF);
@@ -896,6 +935,16 @@ public class GuiTargetingConfig extends GuiScreen {
             }
         }
         return newValue;
+    }
+
+    private void cycleHudAnchor(boolean reverse) {
+        String[] anchors = {"top-right", "top-left", "bottom-left", "bottom-right", "center"};
+        int idx = 0;
+        for (int i = 0; i < anchors.length; i++) {
+            if (anchors[i].equals(TargetingConfig.hudAnchor)) { idx = i; break; }
+        }
+        idx = reverse ? (idx + anchors.length - 1) % anchors.length : (idx + 1) % anchors.length;
+        TargetingConfig.hudAnchor = anchors[idx];
     }
 
     private void cycleDamageMotion(boolean reverse) {

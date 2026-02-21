@@ -28,6 +28,9 @@ public class TargetingConfig {
     public static boolean softAimIndicator = false; // Subtle crosshair nudge toward target
     public static boolean targetHistoryEnabled = false; // Track and mark recently targeted entities
     public static boolean bossStylePanel = false; // Wide boss-bar style panel for high-HP targets
+    public static String hudAnchor = "top-right"; // top-left, top-right, bottom-left, bottom-right, center
+    public static int hudOffsetX = 0; // pixel nudge from anchor
+    public static int hudOffsetY = 0; // pixel nudge from anchor
     
     // Camera Settings
     public static float cameraSmoothness = 0.4f;
@@ -135,6 +138,12 @@ public class TargetingConfig {
                 "Track recently targeted entities and show a marker above them");
             bossStylePanel = config.getBoolean("bossStylePanel", "visual", bossStylePanel,
                 "Use a wide boss-bar style HUD panel for high-HP targets (>100 HP)");
+            hudAnchor = config.getString("hudAnchor", "visual", hudAnchor,
+                "HUD position anchor: top-left, top-right, bottom-left, bottom-right, center");
+            hudOffsetX = config.getInt("hudOffsetX", "visual", hudOffsetX, -500, 500,
+                "Horizontal pixel offset from the anchor position");
+            hudOffsetY = config.getInt("hudOffsetY", "visual", hudOffsetY, -500, 500,
+                "Vertical pixel offset from the anchor position");
             showTargetName = config.getBoolean("showTargetName", "visual", showTargetName,
                 "Show name of targeted entity");
             reticleScale = config.getFloat("reticleScale", "visual", reticleScale, 0.5f, 3.0f,
@@ -290,6 +299,9 @@ public class TargetingConfig {
                 config.get("visual", "softAimIndicator", softAimIndicator).set(softAimIndicator);
                 config.get("visual", "targetHistoryEnabled", targetHistoryEnabled).set(targetHistoryEnabled);
                 config.get("visual", "bossStylePanel", bossStylePanel).set(bossStylePanel);
+                config.get("visual", "hudAnchor", hudAnchor).set(hudAnchor);
+                config.get("visual", "hudOffsetX", hudOffsetX).set(hudOffsetX);
+                config.get("visual", "hudOffsetY", hudOffsetY).set(hudOffsetY);
                 config.get("visual", "reticleColor", reticleColor).set(reticleColor);
                 
                 config.get("camera", "cameraSmoothness", cameraSmoothness).set(cameraSmoothness);
@@ -377,6 +389,9 @@ public class TargetingConfig {
         softAimIndicator = false;
         targetHistoryEnabled = false;
         bossStylePanel = false;
+        hudAnchor = "top-right";
+        hudOffsetX = 0;
+        hudOffsetY = 0;
         reticleColor = 0xFF0000;
         
         cameraSmoothness = 0.4f;
