@@ -19,7 +19,7 @@ import java.util.List;
 public class GuiTargetingConfig extends GuiScreen {
     private final GuiScreen parentScreen;
     private int currentPage = 0;
-    private final int totalPages = 6;
+    private final int totalPages = 7;
     private int sectionLabelY1 = -1;
     private int sectionLabelY2 = -1;
     private String sectionLabel1 = null;
@@ -28,6 +28,7 @@ public class GuiTargetingConfig extends GuiScreen {
     private static final String[] PAGE_TITLES = {
         "§6Targeting",
         "§6HUD & Visuals",
+        "§6HUD Position",
         "§6Camera",
         "§6Entity Filtering & Audio",
         "§6Advanced Sound",
@@ -36,6 +37,7 @@ public class GuiTargetingConfig extends GuiScreen {
     private static final String[] PAGE_DESCRIPTIONS = {
         "§7Lock-on range, angle, and target priority",
         "§7HUD elements, reticle, and display modes",
+        "§7HUD anchor position and pixel offset",
         "§7Camera feel, smoothness, and compatibility",
         "§7What can be targeted and audio controls",
         "§7Sound theme, volume, and pitch tuning",
@@ -243,11 +245,9 @@ public class GuiTargetingConfig extends GuiScreen {
 
                 addToggleButton(BOSS_STYLE_PANEL_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Boss-Style Panel", TargetingConfig.bossStylePanel);
-                currentY += 24 + 10;
-                sectionLabel2 = "\u00a78\u2014 HUD Position \u2014";
-                sectionLabelY2 = currentY - 6;
-                currentY += 4;
+                break;
 
+            case 2: // HUD Position
                 addHudAnchorButton(HUD_ANCHOR_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         TargetingConfig.hudAnchor);
                 currentY += 24;
@@ -260,7 +260,7 @@ public class GuiTargetingConfig extends GuiScreen {
                         "HUD Offset Y", (float)TargetingConfig.hudOffsetY, -500.0f, 500.0f, 5.0f);
                 break;
 
-            case 2: // Camera
+            case 3: // Camera
                 addToggleButton(ENABLE_CAMERA_LOCKON_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Enable Camera Lock-On", TargetingConfig.enableCameraLockOn);
                 currentY += 24;
@@ -307,7 +307,7 @@ public class GuiTargetingConfig extends GuiScreen {
                         "Gentler 1st-Person Smoothing", TargetingConfig.perModeSmoothingEnabled);
                 break;
 
-            case 3: // Entity Filtering & Audio
+            case 4: // Entity Filtering & Audio
                 addToggleButton(TARGET_HOSTILES_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Hostile Mobs", TargetingConfig.targetHostileMobs);
                 currentY += 24;
@@ -356,7 +356,7 @@ public class GuiTargetingConfig extends GuiScreen {
                         "Validation Interval", (float)TargetingConfig.validationInterval, 1.0f, 60.0f, 1.0f);
                 break;
 
-            case 4: // Advanced Sound
+            case 5: // Advanced Sound
                 addSoundThemeButton(SOUND_THEME_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Sound Theme", TargetingConfig.soundTheme);
                 currentY += 24;
@@ -399,7 +399,7 @@ public class GuiTargetingConfig extends GuiScreen {
                         "Target Lost Pitch", TargetingConfig.targetLostPitch, 0.5f, 2.0f, 0.1f);
                 break;
 
-            case 5: // Damage Numbers
+            case 6: // Damage Numbers
                 addToggleButton(ENABLE_DAMAGE_NUMBERS_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Enable Damage Numbers", TargetingConfig.enableDamageNumbers);
                 currentY += 24;
