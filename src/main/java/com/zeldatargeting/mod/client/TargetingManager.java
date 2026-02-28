@@ -2,6 +2,7 @@ package com.zeldatargeting.mod.client;
 
 import com.zeldatargeting.mod.ZeldaTargetingMod;
 import com.zeldatargeting.mod.client.audio.TargetingSounds;
+import com.zeldatargeting.mod.compat.CompatRiding;
 import com.zeldatargeting.mod.client.targeting.EntityDetector;
 import com.zeldatargeting.mod.client.targeting.CameraController;
 import com.zeldatargeting.mod.client.targeting.TargetTracker;
@@ -66,6 +67,12 @@ public class TargetingManager {
             return;
         }
         
+        // Auto-release lock-on when player starts riding (if config enabled)
+        if (isActive && CompatRiding.shouldReleaseLockOn()) {
+            disableLockOn();
+            return;
+        }
+        
         if (isActive && currentTarget != null) {
             // Update targeting system
             targetTracker.update(currentTarget);
@@ -97,6 +104,9 @@ public class TargetingManager {
     }
     
     private void enableLockOn() {
+        if (CompatRiding.shouldBlockLockOn()) {
+            return;
+        }
         Entity target = entityDetector.findNearestTarget();
         if (target != null) {
             isActive = true;

@@ -2,8 +2,8 @@
 {
   "modid": "zeldatargeting",
   "name": "Zelda Targeting",
-  "description": "A sophisticated lock-on targeting system inspired by The Legend of Zelda: Breath of the Wild and Tears of the Kingdom. Features smooth camera transitions, visual targeting indicators, immersive audio feedback, damage prediction system, configurable settings, and seamless integration with Minecraft's combat system.",
-  "version": "1.3.0",
+  "description": "Zelda-style lock-on targeting. Smooth camera, HUD with health/distance, damage prediction, sound themes, config GUI. Compatible with Better Third Person, Shoulder Surfing Reloaded, Neat. Inspired by The Legend of Zelda series.",
+  "version": "1.3.1",
   "mcversion": "1.12.2",
   "url": "https://www.curseforge.com/minecraft/mc-mods/the-lock-on-mod",
   "updateUrl": "",

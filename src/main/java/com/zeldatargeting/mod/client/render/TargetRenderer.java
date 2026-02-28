@@ -2,6 +2,7 @@ package com.zeldatargeting.mod.client.render;
 
 import com.zeldatargeting.mod.client.TargetingManager;
 import com.zeldatargeting.mod.client.combat.DamageCalculator;
+import com.zeldatargeting.mod.compat.CompatNeat;
 import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
@@ -454,7 +455,7 @@ public class TargetRenderer {
 
     private int[] calcHudPosition(int screenWidth, int screenHeight, int panelWidth, int panelHeight) {
         int ox = TargetingConfig.hudOffsetX;
-        int oy = TargetingConfig.hudOffsetY;
+        int oy = TargetingConfig.hudOffsetY + CompatNeat.getHudOffsetY();
         int x, y;
         switch (TargetingConfig.hudAnchor) {
             case "top-left":

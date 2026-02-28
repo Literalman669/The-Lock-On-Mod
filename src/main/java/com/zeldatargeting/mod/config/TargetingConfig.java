@@ -16,6 +16,8 @@ public class TargetingConfig {
     public static double maxAngle = 60.0;
     public static boolean requireLineOfSight = true;
     public static String targetPriority = "nearest"; // "nearest", "health", "threat", "angle"
+    public static boolean disableLockOnWhenRiding = true;
+    public static boolean syncTargetingRangeWithReach = false; // Use player reach (vanilla 3/5 blocks, or Reach Entity Attributes) instead of fixed targetingRange
     
     // Visual Settings
     public static boolean showReticle = true;
@@ -31,6 +33,8 @@ public class TargetingConfig {
     public static String hudAnchor = "top-right"; // top-left, top-right, bottom-left, bottom-right, center
     public static int hudOffsetX = 0; // pixel nudge from anchor
     public static int hudOffsetY = 0; // pixel nudge from anchor
+    public static boolean neatCompatEnabled = true;
+    public static int neatCompatOffsetY = 20;
     
     // Camera Settings
     public static float cameraSmoothness = 0.4f;
@@ -49,6 +53,7 @@ public class TargetingConfig {
     
     // Entity Filtering
     public static boolean targetHostileMobs = true;
+    public static String entityBlacklist = ""; // Comma-separated registry names (e.g. iceandfire:dragon, minecraft:iron_golem)
     public static boolean targetNeutralMobs = true;
     public static boolean targetPassiveMobs = true;
     public static boolean targetPlayers = false;
@@ -72,7 +77,7 @@ public class TargetingConfig {
     public static float targetSwitchPitch = 1.0f;
     public static float lethalTargetPitch = 1.5f;
     public static float targetLostPitch = 0.8f;
-    public static String soundTheme = "default"; // "default", "zelda", "modern", "subtle"
+    public static String soundTheme = "default"; // "default", "zelda", "modern", "subtle", "cinematic"
     public static boolean enableSoundVariety = false; // Cycle through different sounds
     
     // Damage Numbers Display Settings
@@ -122,6 +127,10 @@ public class TargetingConfig {
                 "Require line of sight to target entities");
             targetPriority = config.getString("targetPriority", "targeting", targetPriority,
                 "Target priority: nearest, health, threat, angle");
+            disableLockOnWhenRiding = config.getBoolean("disableLockOnWhenRiding", "targeting", disableLockOnWhenRiding,
+                "Disable lock-on when riding mounts (horses, boats, etc.)");
+            syncTargetingRangeWithReach = config.getBoolean("syncTargetingRangeWithReach", "targeting", syncTargetingRangeWithReach,
+                "Use player reach distance for targeting range (vanilla: 3 survival / 5 creative; also supports Reach Entity Attributes mod)");
             
             // Visual Settings
             showReticle = config.getBoolean("showReticle", "visual", showReticle,
@@ -144,6 +153,10 @@ public class TargetingConfig {
                 "Horizontal pixel offset from the anchor position");
             hudOffsetY = config.getInt("hudOffsetY", "visual", hudOffsetY, -500, 500,
                 "Vertical pixel offset from the anchor position");
+            neatCompatEnabled = config.getBoolean("neatCompatEnabled", "visual", neatCompatEnabled,
+                "Apply extra HUD offset when Neat mod is present (avoids overlap with health bars)");
+            neatCompatOffsetY = config.getInt("neatCompatOffsetY", "visual", neatCompatOffsetY, 0, 100,
+                "Extra vertical HUD offset when Neat compat is enabled (pixels)");
             showTargetName = config.getBoolean("showTargetName", "visual", showTargetName,
                 "Show name of targeted entity");
             reticleScale = config.getFloat("reticleScale", "visual", reticleScale, 0.5f, 3.0f,
@@ -188,6 +201,8 @@ public class TargetingConfig {
                 "Allow targeting passive mobs");
             targetPlayers = config.getBoolean("targetPlayers", "entities", targetPlayers,
                 "Allow targeting other players");
+            entityBlacklist = config.getString("entityBlacklist", "entities", entityBlacklist,
+                "Comma-separated entity registry names to exclude from targeting (e.g. iceandfire:dragon, minecraft:iron_golem)");
             
             // Audio Settings
             enableSounds = config.getBoolean("enableSounds", "audio", enableSounds,
@@ -223,7 +238,7 @@ public class TargetingConfig {
             targetLostPitch = config.getFloat("targetLostPitch", "audio", targetLostPitch, 0.5f, 2.0f,
                 "Pitch of target lost sound");
             soundTheme = config.getString("soundTheme", "audio", soundTheme,
-                "Sound theme: default, zelda, modern, subtle");
+                "Sound theme: default, zelda, modern, subtle, cinematic");
             enableSoundVariety = config.getBoolean("enableSoundVariety", "audio", enableSoundVariety,
                 "Enable cycling through different sound variants");
             
@@ -289,6 +304,8 @@ public class TargetingConfig {
                 config.get("targeting", "maxAngle", (float) maxAngle).set((float) maxAngle);
                 config.get("targeting", "requireLineOfSight", requireLineOfSight).set(requireLineOfSight);
                 config.get("targeting", "targetPriority", targetPriority).set(targetPriority);
+                config.get("targeting", "disableLockOnWhenRiding", disableLockOnWhenRiding).set(disableLockOnWhenRiding);
+                config.get("targeting", "syncTargetingRangeWithReach", syncTargetingRangeWithReach).set(syncTargetingRangeWithReach);
                 
                 config.get("visual", "showReticle", showReticle).set(showReticle);
                 config.get("visual", "showHealthBar", showHealthBar).set(showHealthBar);
@@ -302,6 +319,8 @@ public class TargetingConfig {
                 config.get("visual", "hudAnchor", hudAnchor).set(hudAnchor);
                 config.get("visual", "hudOffsetX", hudOffsetX).set(hudOffsetX);
                 config.get("visual", "hudOffsetY", hudOffsetY).set(hudOffsetY);
+                config.get("visual", "neatCompatEnabled", neatCompatEnabled).set(neatCompatEnabled);
+                config.get("visual", "neatCompatOffsetY", neatCompatOffsetY).set(neatCompatOffsetY);
                 config.get("visual", "reticleColor", reticleColor).set(reticleColor);
                 
                 config.get("camera", "cameraSmoothness", cameraSmoothness).set(cameraSmoothness);
@@ -322,6 +341,7 @@ public class TargetingConfig {
                 config.get("entities", "targetNeutralMobs", targetNeutralMobs).set(targetNeutralMobs);
                 config.get("entities", "targetPassiveMobs", targetPassiveMobs).set(targetPassiveMobs);
                 config.get("entities", "targetPlayers", targetPlayers).set(targetPlayers);
+                config.get("entities", "entityBlacklist", entityBlacklist).set(entityBlacklist);
                 
                 config.get("audio", "enableSounds", enableSounds).set(enableSounds);
                 config.get("audio", "soundVolume", soundVolume).set(soundVolume);
@@ -379,6 +399,8 @@ public class TargetingConfig {
         maxAngle = 60.0;
         requireLineOfSight = true;
         targetPriority = "nearest";
+        disableLockOnWhenRiding = true;
+        syncTargetingRangeWithReach = false;
         
         showReticle = true;
         showHealthBar = true;
@@ -392,6 +414,8 @@ public class TargetingConfig {
         hudAnchor = "top-right";
         hudOffsetX = 0;
         hudOffsetY = 0;
+        neatCompatEnabled = true;
+        neatCompatOffsetY = 20;
         reticleColor = 0xFF0000;
         
         cameraSmoothness = 0.4f;
@@ -412,6 +436,7 @@ public class TargetingConfig {
         targetNeutralMobs = true;
         targetPassiveMobs = true;
         targetPlayers = false;
+        entityBlacklist = "";
         
         enableSounds = true;
         soundVolume = 1.0f;
@@ -460,8 +485,29 @@ public class TargetingConfig {
     }
     
     // Getters for commonly used values
+    /** Returns configured targeting range (for GUI/config display). */
     public static double getTargetingRange() {
         return targetingRange;
+    }
+
+    /** Returns effective targeting range: player reach when syncTargetingRangeWithReach is true, else configured targetingRange. */
+    public static double getTargetingRange(net.minecraft.entity.player.EntityPlayer player) {
+        if (!syncTargetingRangeWithReach || player == null) {
+            return targetingRange;
+        }
+        // Try Reach Entity Attributes mod (adds reach/attack_range attributes)
+        net.minecraft.entity.ai.attributes.IAttributeInstance reachAttr = player.getAttributeMap().getAttributeInstanceByName("reach_entity_attributes:reach");
+        if (reachAttr != null) {
+            double v = reachAttr.getAttributeValue();
+            if (v > 0) return v;
+        }
+        reachAttr = player.getAttributeMap().getAttributeInstanceByName("reach_entity_attributes:attack_range");
+        if (reachAttr != null) {
+            double v = reachAttr.getAttributeValue();
+            if (v > 0) return v;
+        }
+        // Vanilla / Forge: survival 3.0, creative 5.0
+        return player.isCreative() ? 5.0 : 3.0;
     }
     
     public static double getMaxTrackingDistance() {

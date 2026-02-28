@@ -53,9 +53,14 @@
 - [x] Add per-mode smoothing overrides (first-person/third-person/SSR active).
 
 ### 2.3 Mod Compatibility
-- [ ] Re-verify compatibility logic with Better Third Person.
+- [x] Re-verify compatibility logic with Better Third Person.
 - [x] Re-verify compatibility logic with Shoulder Surfing Reloaded.
 - [x] Add debug flag for compatibility diagnostics (optional log mode).
+- [x] Centralized compat package (ModCompat, CompatBTP, CompatSSR, CompatNeat, CompatRiding, CompatEntityFilter).
+- [x] Neat HUD offset when both mods present.
+- [x] Disable lock-on when riding (configurable).
+- [x] Entity blacklist for modded mobs.
+- [x] Sync targeting range with player reach (vanilla + Reach Entity Attributes).
 
 ---
 

@@ -125,6 +125,11 @@ public class GuiTargetingConfig extends GuiScreen {
     private static final int HUD_ANCHOR_BUTTON = 163;
     private static final int HUD_OFFSET_X_BUTTON = 164;
     private static final int HUD_OFFSET_Y_BUTTON = 165;
+    private static final int DISABLE_LOCKON_WHEN_RIDING_TOGGLE = 166;
+    private static final int SYNC_REACH_TOGGLE = 170;
+    private static final int NEAT_COMPAT_TOGGLE = 167;
+    private static final int NEAT_COMPAT_OFFSET_BUTTON = 168;
+    private static final int ENTITY_BLACKLIST_BUTTON = 169;
 
     public GuiTargetingConfig(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -182,6 +187,14 @@ public class GuiTargetingConfig extends GuiScreen {
 
                 addTargetPriorityButton(TARGET_PRIORITY_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         TargetingConfig.targetPriority);
+                currentY += 24;
+
+                addToggleButton(DISABLE_LOCKON_WHEN_RIDING_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "Disable Lock-On When Riding", TargetingConfig.disableLockOnWhenRiding);
+                currentY += 24;
+
+                addToggleButton(SYNC_REACH_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "Sync Range With Reach", TargetingConfig.syncTargetingRangeWithReach);
                 break;
 
             case 1: // HUD & Visuals
@@ -258,6 +271,17 @@ public class GuiTargetingConfig extends GuiScreen {
 
                 addValueButton(HUD_OFFSET_Y_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "HUD Offset Y", (float)TargetingConfig.hudOffsetY, -500.0f, 500.0f, 5.0f);
+                currentY += 24 + 10;
+                sectionLabel1 = "§8— Neat Compat —";
+                sectionLabelY1 = currentY - 6;
+                currentY += 4;
+
+                addToggleButton(NEAT_COMPAT_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "Neat HUD Offset", TargetingConfig.neatCompatEnabled);
+                currentY += 24;
+
+                addValueButton(NEAT_COMPAT_OFFSET_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
+                        "Neat Offset Y", (float)TargetingConfig.neatCompatOffsetY, 0.0f, 100.0f, 5.0f);
                 break;
 
             case 3: // Camera
@@ -318,6 +342,9 @@ public class GuiTargetingConfig extends GuiScreen {
 
                 addToggleButton(TARGET_PASSIVES_TOGGLE, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight,
                         "Target Passive Mobs", TargetingConfig.targetPassiveMobs);
+                currentY += 24;
+
+                addEntityBlacklistButton(ENTITY_BLACKLIST_BUTTON, centerX - buttonWidth/2, currentY, buttonWidth, buttonHeight);
                 currentY += 24 + 10;
                 sectionLabel1 = "§8— Audio —";
                 sectionLabelY1 = currentY - 6;
@@ -525,6 +552,14 @@ public class GuiTargetingConfig extends GuiScreen {
         this.buttonList.add(button);
     }
 
+    private void addEntityBlacklistButton(int id, int x, int y, int width, int height) {
+        String bl = TargetingConfig.entityBlacklist;
+        int count = (bl == null || bl.trim().isEmpty()) ? 0
+                : bl.split("[,;\\s]+").length;
+        String displayText = "Entity Blacklist: " + (count == 0 ? "None" : count + " entries") + "...";
+        this.buttonList.add(new GuiButton(id, x, y, width, height, displayText));
+    }
+
     private GuiButton getButtonById(int id) {
         for (GuiButton button : this.buttonList) {
             if (button.id == id) {
@@ -571,6 +606,8 @@ public class GuiTargetingConfig extends GuiScreen {
         setButtonEnabled(DAMAGE_NUMBERS_COLOR_BUTTON, damageColorControlsEnabled);
         setButtonEnabled(CRITICAL_DAMAGE_COLOR_BUTTON, damageColorControlsEnabled);
         setButtonEnabled(LETHAL_DAMAGE_COLOR_BUTTON, damageColorControlsEnabled);
+
+        setButtonEnabled(NEAT_COMPAT_OFFSET_BUTTON, TargetingConfig.neatCompatEnabled);
     }
 
     private void cycleSoundTheme() {
@@ -714,6 +751,14 @@ public class GuiTargetingConfig extends GuiScreen {
             case TARGET_PRIORITY_BUTTON:
                 cycleTargetPriority(decrease);
                 button.displayString = "Target Priority: " + TargetingConfig.targetPriority.toUpperCase();
+                break;
+            case DISABLE_LOCKON_WHEN_RIDING_TOGGLE:
+                TargetingConfig.disableLockOnWhenRiding = !TargetingConfig.disableLockOnWhenRiding;
+                button.displayString = formatToggleText("Disable Lock-On When Riding", TargetingConfig.disableLockOnWhenRiding);
+                break;
+            case SYNC_REACH_TOGGLE:
+                TargetingConfig.syncTargetingRangeWithReach = !TargetingConfig.syncTargetingRangeWithReach;
+                button.displayString = formatToggleText("Sync Range With Reach", TargetingConfig.syncTargetingRangeWithReach);
                 break;
             case TARGET_HOSTILES_TOGGLE:
                 TargetingConfig.targetHostileMobs = !TargetingConfig.targetHostileMobs;
@@ -897,6 +942,16 @@ public class GuiTargetingConfig extends GuiScreen {
                 float incY = isShiftPressed ? 1.0f : 5.0f;
                 TargetingConfig.hudOffsetY = (int) cycleValue((float) TargetingConfig.hudOffsetY, -500.0f, 500.0f, incY, decrease);
                 button.displayString = "HUD Offset Y: " + TargetingConfig.hudOffsetY;
+                break;
+            }
+            case NEAT_COMPAT_TOGGLE:
+                TargetingConfig.neatCompatEnabled = !TargetingConfig.neatCompatEnabled;
+                button.displayString = formatToggleText("Neat HUD Offset", TargetingConfig.neatCompatEnabled);
+                break;
+            case NEAT_COMPAT_OFFSET_BUTTON: {
+                float incNeat = isShiftPressed ? 1.0f : 5.0f;
+                TargetingConfig.neatCompatOffsetY = (int) cycleValue((float) TargetingConfig.neatCompatOffsetY, 0.0f, 100.0f, incNeat, decrease);
+                button.displayString = "Neat Offset Y: " + TargetingConfig.neatCompatOffsetY;
                 break;
             }
             case DAMAGE_NUMBERS_COLOR_BUTTON:
@@ -1104,6 +1159,10 @@ public class GuiTargetingConfig extends GuiScreen {
             this.initGui();
             return;
         }
+        if (button.id == ENTITY_BLACKLIST_BUTTON) {
+            this.mc.displayGuiScreen(new GuiEntityBlacklistEdit(this));
+            return;
+        }
 
         handleConfigButton(button, false);
     }
@@ -1204,6 +1263,8 @@ public class GuiTargetingConfig extends GuiScreen {
                 return Arrays.asList("Distance where an active lock breaks.", "Set above targeting range for smoother chase behavior.");
             case DETECTION_ANGLE_BUTTON:
                 return Arrays.asList("Field-of-view cone used for detection.", "Smaller = stricter forward targeting.");
+            case SYNC_REACH_TOGGLE:
+                return Arrays.asList("Use player reach distance for targeting range.", "Vanilla: 3 blocks (survival) / 5 (creative). Compatible with Reach Entity Attributes mod.");
             case CAMERA_SMOOTHNESS_BUTTON:
                 return Arrays.asList("Camera follow responsiveness.", "Lower = smoother / slower, higher = snappier.");
             case BTP_MODE_TOGGLE:

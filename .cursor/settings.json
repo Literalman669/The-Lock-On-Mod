@@ -1,0 +1,40 @@
+{
+  "plugins": {
+    "huggingface-skills": {
+      "enabled": true
+    },
+    "functions": {
+      "enabled": true
+    },
+    "continual-learning": {
+      "enabled": true
+    },
+    "cursor-team-kit": {
+      "enabled": true
+    },
+    "context7-plugin": {
+      "enabled": true
+    },
+    "create-plugin": {
+      "enabled": true
+    },
+    "compound-engineering": {
+      "enabled": true
+    },
+    "superpowers": {
+      "enabled": true
+    },
+    "parallel": {
+      "enabled": true
+    },
+    "langfuse": {
+      "enabled": true
+    },
+    "runlayer": {
+      "enabled": true
+    },
+    "linear": {
+      "enabled": true
+    }
+  }
+}

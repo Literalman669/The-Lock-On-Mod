@@ -1,5 +1,6 @@
 package com.zeldatargeting.mod.client.targeting;
 
+import com.zeldatargeting.mod.compat.CompatEntityFilter;
 import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -92,7 +93,7 @@ public class EntityDetector {
     private List<Entity> getValidTargetsForCycling(EntityPlayer player) {
         List<Entity> validTargets = cachedCyclingTargets;
         validTargets.clear();
-        double range = TargetingConfig.getTargetingRange();
+        double range = TargetingConfig.getTargetingRange(player);
         double rangeSq = range * range;
         AxisAlignedBB searchBox = new AxisAlignedBB(
             player.posX - range, player.posY - range, player.posZ - range,
@@ -103,6 +104,7 @@ public class EntityDetector {
             if (!(entity instanceof EntityLiving)) continue;
             if (player.getDistanceSq(entity) > rangeSq) continue;
             if (!isTargetableEntityType(entity)) continue;
+            if (CompatEntityFilter.isBlacklisted(entity)) continue;
             validTargets.add(entity);
         }
         return validTargets;
@@ -114,7 +116,7 @@ public class EntityDetector {
         World world = player.world;
         
         // Create bounding box for search area
-        double range = TargetingConfig.getTargetingRange();
+        double range = TargetingConfig.getTargetingRange(player);
         AxisAlignedBB searchBox = new AxisAlignedBB(
             player.posX - range, player.posY - range, player.posZ - range,
             player.posX + range, player.posY + range, player.posZ + range
@@ -149,7 +151,7 @@ public class EntityDetector {
         
         // Check distance
         double distance = player.getDistanceSq(entity);
-        double maxRange = TargetingConfig.getTargetingRange();
+        double maxRange = TargetingConfig.getTargetingRange(player);
         if (distance > maxRange * maxRange) {
             return false;
         }
@@ -166,8 +168,13 @@ public class EntityDetector {
             return false;
         }
         
-        // Additional filtering can be added here based on configuration
-        return isTargetableEntityType(entity);
+        if (!isTargetableEntityType(entity)) {
+            return false;
+        }
+        if (CompatEntityFilter.isBlacklisted(entity)) {
+            return false;
+        }
+        return true;
     }
     
     private double getAngleToEntity(EntityPlayer player, Entity entity, Vec3d playerLook) {
@@ -205,7 +212,7 @@ public class EntityDetector {
             return TargetingConfig.shouldTargetPlayers();
         }
         
-        // Target other living entities (neutral mobs)
+        // Target other living entities (neutral mobs, modded entities not covered by IMob/EntityAnimal/EntityPlayer)
         if (entity instanceof EntityLiving) {
             return TargetingConfig.shouldTargetNeutralMobs();
         }

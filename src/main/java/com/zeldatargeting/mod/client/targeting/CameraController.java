@@ -1,6 +1,7 @@
 package com.zeldatargeting.mod.client.targeting;
 
-import com.zeldatargeting.mod.ZeldaTargetingMod;
+import com.zeldatargeting.mod.compat.CompatBTP;
+import com.zeldatargeting.mod.compat.CompatSSR;
 import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -11,7 +12,6 @@ import net.minecraft.util.math.Vec3d;
 public class CameraController {
     
     private static final float MIN_TRACKING_SMOOTHING  = 0.3f;
-    private static final float BTP_MIN_SMOOTHING       = 0.05f;
     private static final float VELOCITY_BOOST_SCALE    = 0.08f;
     private static final float MAX_VELOCITY_BOOST      = 0.45f;
     private static final float SMOOTHING_CEILING       = 0.95f;
@@ -70,8 +70,7 @@ public class CameraController {
             return;
         }
         
-        if (ZeldaTargetingMod.isBetterThirdPersonLoaded()
-                && "visual_only".equals(TargetingConfig.btpCompatibilityMode)) {
+        if (!CompatBTP.shouldApplyCameraRotation()) {
             return;
         }
         
@@ -90,11 +89,8 @@ public class CameraController {
         float feedTargetPitch = MathHelper.clamp(targetPitch + pitchVelocity, -90.0f, 90.0f);
         
         // Calculate smoothing based on BTP compatibility mode
-        float smoothing = Math.max(TargetingConfig.getCameraSmoothness(), MIN_TRACKING_SMOOTHING);
-
-        if (ZeldaTargetingMod.isBetterThirdPersonLoaded() && "gentle".equals(TargetingConfig.btpCompatibilityMode)) {
-            smoothing = Math.max(smoothing * TargetingConfig.btpCameraIntensity, BTP_MIN_SMOOTHING);
-        }
+        float baseSmoothing = Math.max(TargetingConfig.getCameraSmoothness(), MIN_TRACKING_SMOOTHING);
+        float smoothing = CompatBTP.getEffectiveSmoothing(baseSmoothing);
 
         // Per-mode smoothing: gentler (0.6x) in first-person for tighter precision feel
         if (TargetingConfig.perModeSmoothingEnabled && mc.gameSettings.thirdPersonView == 0) {
@@ -124,12 +120,9 @@ public class CameraController {
     }
     
     public void resetCamera() {
-        if (hasStoredOriginal && mc.player != null) {
-            mc.player.rotationYaw     = originalYaw;
-            mc.player.rotationPitch   = originalPitch;
-            mc.player.prevRotationYaw   = originalYaw;
-            mc.player.prevRotationPitch = originalPitch;
-        }
+        // Leave the camera where it is — the player was looking at the target.
+        // Restoring to originalYaw/originalPitch would snap the view back to where
+        // they were when lock-on started, causing a jarring flick when the target dies.
         currentTarget = null;
         hasStoredOriginal = false;
     }
@@ -186,11 +179,11 @@ public class CameraController {
         // The crosshair (screen center) corresponds to a ray from the shoulder camera
         // position, not the player's eye. We recompute targetYaw/Pitch from the
         // shoulder camera position so the crosshair lands on the locked target.
-        if (ZeldaTargetingMod.isShoulderSurfingActive()
+        if (CompatSSR.isActive()
                 && TargetingConfig.ssrCompensationEnabled) {
             float yawRad = (float) Math.toRadians(targetYaw);
             // Read SSR's actual runtime x-offset (handles left/right shoulder, aiming, etc.)
-            double xOffset = ZeldaTargetingMod.getShoulderSurfingOffsetX();
+            double xOffset = CompatSSR.getOffsetX();
             double camX = playerX + xOffset * Math.cos(yawRad);
             double camZ = playerZ + xOffset * Math.sin(yawRad);
             double dX = targetX - camX;
