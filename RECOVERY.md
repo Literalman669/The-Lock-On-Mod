@@ -23,4 +23,7 @@ contains 49 suites and 175 tests with no failures, errors, or skips, matching
 the totals recorded in the old task. The build produced
 `build/libs/zelda-targeting-1.4.0.jar`. Its class list includes the final
 Shoulder Surfing bridge and offset session, and excludes the earlier shoulder
-aim solver and movement basis. An in-game playtest has not yet been repeated.
+aim solver and movement basis. On September 24, 2026, the recovered mod loaded
+in a Minecraft 1.12.2 Forge development client, and the project owner confirmed
+that it worked as expected in-game. Shoulder Surfing Reloaded was not installed
+in that test client, so its optional integration remains to be retested.
