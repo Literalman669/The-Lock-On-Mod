@@ -13,7 +13,7 @@ apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
-version = '1.3.0'
+version = '1.4.0'
 group = 'com.zeldatargeting.mod' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'zelda-targeting'
 
@@ -61,11 +61,25 @@ minecraft {
     }
 }
 
+// LegacyDev discovers the development mod from the compiled-class directory,
+// while Gradle normally writes mcmod.info to a separate resources directory.
+// Put the generated descriptor beside the classes for development launches;
+// the release JAR already contains both entries together.
+task syncDevModMetadata(type: Copy) {
+    dependsOn processResources
+    from "$buildDir/resources/main"
+    include 'mcmod.info'
+    into "$buildDir/classes/java/main"
+}
+
+classes.dependsOn syncDevModMetadata
+
 dependencies {
     // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
     // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
     minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2859'
+    testImplementation 'junit:junit:4.13.2'
 
     // You may put jars on which you depend on in ./libs or you may define them like so..
     // compile "some.group:artifact:version:classifier"

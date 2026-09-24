@@ -1,6 +1,7 @@
 package com.zeldatargeting.mod.proxy;
 
 import com.zeldatargeting.mod.client.KeyBindings;
+import com.zeldatargeting.mod.client.ConfigOnboardingClientHandler;
 import com.zeldatargeting.mod.client.TargetingManager;
 import com.zeldatargeting.mod.client.combat.DamageEventListener;
 import com.zeldatargeting.mod.client.render.TargetRenderer;
@@ -31,6 +32,7 @@ public class ClientProxy extends CommonProxy {
         MinecraftForge.EVENT_BUS.register(new TargetRenderer());
         MinecraftForge.EVENT_BUS.register(new DamageNumbersRenderer());
         MinecraftForge.EVENT_BUS.register(new DamageEventListener());
+        MinecraftForge.EVENT_BUS.register(new ConfigOnboardingClientHandler());
     }
     
     @Override

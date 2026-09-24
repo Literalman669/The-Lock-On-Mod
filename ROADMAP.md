@@ -1,4 +1,9 @@
-# Zelda Targeting Roadmap
+# Zelda Targeting Roadmap (1.3 historical)
+
+> The 1.4.0 roadmap rewrite was in the deleted local Git history and could not
+> be recovered verbatim. This checklist describes the earlier 1.3 work; see
+> [RECOVERY.md](RECOVERY.md) and the 1.4.0 design documents under `docs/` for
+> the recovered project's current state.
 
 > Living checklist for planned improvements, in-progress tasks, and future ideas.
 > Keep this file updated every session.

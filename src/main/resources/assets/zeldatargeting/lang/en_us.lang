@@ -3,6 +3,7 @@ key.categories.zeldatargeting=Zelda Targeting
 key.zeldatargeting.lockon_toggle=Toggle Lock-On
 key.zeldatargeting.cycle_left=Cycle Target Left
 key.zeldatargeting.cycle_right=Cycle Target Right
+key.zeldatargeting.camera_free_look=Camera Free Look
 
 # Messages
 zeldatargeting.target.locked=Target Locked: %s

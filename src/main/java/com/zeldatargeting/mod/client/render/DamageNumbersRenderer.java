@@ -174,6 +174,9 @@ public class DamageNumbersRenderer {
         boolean isLethal = entity.getHealth() - damage <= 0;
 
         damageNumbers.add(new DamageNumber(entity, damage, isCritical, isLethal));
+        if (manager != null) {
+            manager.getPresentationFeedbackController().onDamage(isCritical, isLethal);
+        }
         while (damageNumbers.size() > 50) damageNumbers.poll();
     }
 

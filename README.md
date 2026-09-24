@@ -1,120 +1,64 @@
 # Zelda Targeting
 
-The definitive lock-on targeting mod for Minecraft 1.12.2. Brings Zelda-style Z-targeting to your combat with smart HUD, full audio feedback, and deep configuration.
+Zelda Targeting is a client-only lock-on targeting mod for Minecraft 1.12.2. It combines responsive target selection, a configurable camera, combat feedback, and a Zelda-inspired visual presentation.
 
-## Controls
+## 1.4.0 highlights
 
-| Key | Action |
-|-----|--------|
-| R | Lock on / unlock |
-| Q | Cycle target left |
-| E | Cycle target right |
-
-## Features
-
-### Targeting
-- Configurable range (5–50 blocks), detection angle (15–180°), and max tracking distance
-- **4 priority modes** — Nearest, Health, Threat, Angle
-- Stable clockwise target cycling with 250ms cooldown to prevent jank
-- Line-of-sight requirement toggle
-- Entity type filtering — hostile, neutral, passive, players
-
-### HUD & Visuals
-- Animated reticle with configurable scale
-- Health bar with color-coded fill and pulsing low-health warning (≤25%)
-- Distance, target name, hits-to-kill, damage prediction, vulnerability display
-- **Event-driven damage accuracy** — reads real post-armor/enchant/mod damage after first hit; shows `~` prefix on pre-hit estimates so you always know which is which. Works with any mod automatically, no compat needed.
-- Lethal target highlighting with animated title flash
-- Floating damage numbers with **3 motion presets** (Default / Subtle / Arcade), fade-out, and critical-hit pop emphasis
-- **HUD position control** — 5 anchor presets (Top Right, Top Left, Bottom Left, Bottom Right, Center) + X/Y pixel offset nudge
-- Compact HUD mode — name + health bar only
-- Boss-style panel — wide centered bar at screen bottom for targets ≥100 HP
-- Soft aim indicator — fading crosshair nudge toward locked target
-- Target history ring — faint world-space ring above last 3 locked targets
-
-### Audio
-- **5 sound themes** — Default, Zelda, Modern, Subtle, Cinematic
-- 4 distinct events — lock-on, target switch, lethal target, target lost
-- Per-event volume, pitch, and enable/disable controls
-- Sound variety cycling
-- 150ms anti-stack cooldown prevents overlapping blasts on rapid retargeting
-
-### Camera
-- **3 lock-on feel presets** — Cinematic, Balanced, Snappy
-- Adjustable smoothness, max pitch, max yaw
-- Vertical focus Y-offset
-- Per-mode smoothing (gentler first-person tracking)
-- Auto third-person on lock-on
-- Better Third Person compatibility (disabled / gentle / visual-only)
-- Shoulder Surfing Reloaded attack alignment compensation
-
-### Configuration GUI
-- **6-page GUI** — Targeting / HUD & Visuals / Camera / Entity Filtering & Audio / Advanced Sound / Damage Numbers
-- Compact header with title + dot-based page indicator on one line
-- Left-click increase / right-click decrease / Shift for fine-tune on all value buttons
-- Section divider labels between button groups
-- Hover tooltips on every button
-- All settings persist across restarts
+- Rebuilt targeting state and camera flow with safer lock restoration.
+- Adaptive Hybrid HUD with a responsive target panel and boss presentation.
+- A tubular, neon target ring whose health arc shrinks with the target's remaining health.
+- Shared green, orange, and red health states across the target ring and HUD.
+- Preset-first, seven-page configuration flow with transactional Save, Cancel, and Reset actions.
+- Optional Shoulder Surfing Reloaded 2.9.x integration with reversible lock centering.
+- Accessibility controls for palette, opacity, compact HUD, soft indicators, and reduced motion.
 
 ## Requirements
 
-- **Minecraft** 1.12.2
-- **Forge** 14.23.5.2859+
-- **Java** 8+
+- Minecraft 1.12.2
+- Minecraft Forge 14.23.5.2859 or a compatible 1.12.2 Forge build
 
-## Changelog
+The mod is client-only. Install it on the client; a server-side installation is not required.
 
-### 1.3.0 — Polish & Accuracy (Current)
+## Controls
 
-**Config GUI Overhaul**
-- Dropped broken GUI scale hack — layout now uses screen dimensions directly
-- Collapsed header: title + page dots on one line, fixed `startY`, nav buttons always at `height - 28`
-- Removed redundant interaction hint line from header
-- Restructured from 5 pages to 6 clean pages: Targeting (5 items), HUD & Visuals, Camera, Entity Filtering & Audio, Advanced Sound, Damage Numbers
-- Section divider labels (`— Combat Info —`, `— Display Modes —`, `— Audio —`) drawn between button groups
-- `buttonHeight` bumped to 22 for easier clicking
+The default key bindings are available from Minecraft's Controls menu under Zelda Targeting:
 
-**HUD Position Control**
-- New **HUD Position** button on HUD & Visuals page — cycles 5 anchors: Top Right (default), Top Left, Bottom Left, Bottom Right, Center
-- **HUD Offset X / Y** — pixel nudge from anchor, ±5 per click, ±1 with Shift
-- All HUD modes (normal, compact, boss panel) respect the anchor
+- **R** acquires or releases a target.
+- **Z** and **X** cycle between eligible targets.
+- **Left Alt** temporarily enables free look.
 
-**Damage Accuracy**
-- Replaced manual damage formula with event-driven cache via `LivingDamageEvent`
-- Reads real post-armor, post-enchant, post-mod-pipeline damage after first hit
-- Falls back to manual estimate (prefixed `~`) before first hit or after 5s weapon idle
-- Works automatically with any mod — no compat code needed
+## Configuration
 
----
+Open **Mods**, select **Zelda Targeting**, then choose **Config**.
 
-### 1.2.0 — Feature Expansion
+The configuration is arranged as seven pages:
 
-- 4 target priority modes, stable clockwise cycling with cooldown
-- 3 camera lock-on feel presets, vertical focus Y-offset, per-mode smoothing
-- Cinematic sound theme (5 total), 150ms per-event anti-stack cooldown, per-event toggles
-- Damage number motion presets, critical-hit pop emphasis, low-health pulsing overlay
-- Compact HUD, boss-style panel, soft aim indicator, target history ring
-- 5-page config GUI with dot-based page indicator and contextual button disabling
-- Eliminated per-frame ArrayList allocations in renderer and target search
+1. Presets
+2. Targeting
+3. Camera
+4. HUD
+5. Audio
+6. Compatibility
+7. Accessibility
 
----
+Preset choices are previewed first. Choose **Save** to keep the preview, **Cancel** to discard it, or **Reset** to restore the current page's default settings.
 
-### 1.1.2 — Audio & Visual Polish
+## Compatibility
 
-- Complete sound effects system with individual volume controls per event
-- Smart audio logic (lethal targets get special audio)
-- Damage prediction, lethal highlighting, vulnerability display
-- Smart HUD positioning to prevent screen-edge cut-off
+Vanilla first and third person are the automatic fallback. Shoulder Surfing Reloaded 2.9.x is optional: Zelda Targeting temporarily centers SSR's runtime camera while locked so the target, crosshair, attack ray, and movement share one origin. The exact configured shoulder offset is restored on unlock and is never rewritten in SSR's configuration.
 
----
+Better Third Person is not supported. It conflicts with Shoulder Surfing Reloaded's camera ownership model and should not be combined with it.
 
-### 1.0.0 — Initial Release
+## Building from source
 
-- Full targeting system with intelligent detection
-- 3-page configuration GUI
-- Better Third Person compatibility
-- Basic audio and performance optimizations
+From a Windows PowerShell prompt in the repository:
 
----
+```powershell
+.\gradlew.bat clean test build
+```
 
-*Inspired by The Legend of Zelda series.*
+The installable reobfuscated JAR is written to `build\libs`.
+
+## Release validation
+
+Before publishing, copy the packaged JAR into a normal Minecraft 1.12.2 Forge profile and verify the mod list, configuration GUI, target acquisition, target switching, camera restoration, target ring, HUD panel, and audio feedback.

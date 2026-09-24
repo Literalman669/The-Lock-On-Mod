@@ -7,10 +7,13 @@ import org.lwjgl.input.Keyboard;
 public class KeyBindings {
     
     public static final String CATEGORY = "key.categories.zeldatargeting";
+    public static final int DEFAULT_CYCLE_LEFT_KEY = Keyboard.KEY_Z;
+    public static final int DEFAULT_CYCLE_RIGHT_KEY = Keyboard.KEY_X;
     
     public static KeyBinding lockOnToggle;
     public static KeyBinding cycleTargetLeft;
     public static KeyBinding cycleTargetRight;
+    public static KeyBinding cameraFreeLook;
     
     public static void init() {
         // Lock-on toggle key (default: R)
@@ -20,17 +23,23 @@ public class KeyBindings {
             CATEGORY
         );
         
-        // Cycle target left key (default: Q)
+        // Cycle target left key (default: Z)
         cycleTargetLeft = new KeyBinding(
             "key.zeldatargeting.cycle_left",
-            Keyboard.KEY_Q,
+            DEFAULT_CYCLE_LEFT_KEY,
             CATEGORY
         );
         
-        // Cycle target right key (default: E)
+        // Cycle target right key (default: X)
         cycleTargetRight = new KeyBinding(
             "key.zeldatargeting.cycle_right",
-            Keyboard.KEY_E,
+            DEFAULT_CYCLE_RIGHT_KEY,
+            CATEGORY
+        );
+
+        cameraFreeLook = new KeyBinding(
+            "key.zeldatargeting.camera_free_look",
+            Keyboard.KEY_LMENU,
             CATEGORY
         );
         
@@ -38,5 +47,6 @@ public class KeyBindings {
         ClientRegistry.registerKeyBinding(lockOnToggle);
         ClientRegistry.registerKeyBinding(cycleTargetLeft);
         ClientRegistry.registerKeyBinding(cycleTargetRight);
+        ClientRegistry.registerKeyBinding(cameraFreeLook);
     }
 }
