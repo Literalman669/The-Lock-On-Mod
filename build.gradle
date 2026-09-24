@@ -62,13 +62,11 @@ minecraft {
 }
 
 // LegacyDev discovers the development mod from the compiled-class directory,
-// while Gradle normally writes mcmod.info to a separate resources directory.
-// Put the generated descriptor beside the classes for development launches;
-// the release JAR already contains both entries together.
+// while Gradle normally writes resources to a separate directory. Put the
+// descriptor and assets beside the classes for development launches.
 task syncDevModMetadata(type: Copy) {
     dependsOn processResources
     from "$buildDir/resources/main"
-    include 'mcmod.info'
     into "$buildDir/classes/java/main"
 }
 

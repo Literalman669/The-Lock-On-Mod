@@ -69,6 +69,15 @@ public final class TargetingManager {
 
     @SubscribeEvent
     public void onKeyInput(InputEvent.KeyInputEvent event) {
+        handleInput();
+    }
+
+    @SubscribeEvent
+    public void onMouseInput(InputEvent.MouseInputEvent event) {
+        handleInput();
+    }
+
+    private void handleInput() {
         if (Minecraft.getMinecraft().currentScreen != null) {
             return;
         }

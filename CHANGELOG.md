@@ -19,6 +19,9 @@
 
 ### Fixed
 
+- Mouse-bound targeting controls respond on the mouse press instead of waiting for a keyboard event.
+- Development-client keybinding labels load their translations.
+- The version shown by Forge matches the 1.4.0 build and mod metadata.
 - Target aim point now favors a practical hit location instead of aiming above short mobs.
 - Target-history capture is more consistent across target changes.
 - Configuration navigation, control layout, and button rendering work consistently across the seven pages.
