@@ -14,21 +14,17 @@ import net.minecraft.client.gui.ScaledResolution;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
 @SideOnly(Side.CLIENT)
 public final class DetailPanelRenderer {
     private static final int HUD_MARGIN = 8;
-    private static final int HUD_PADDING = 8;
-    private static final int HUD_MIN_WIDTH = 130;
-    private static final int HUD_BAR_WIDTH = 124;
-    private static final int HUD_ACCENT_HEIGHT = 2;
-    private static final int HUD_TITLE_GAP = 14;
-    private static final int HUD_VALUE_GAP = 12;
-    private static final int HUD_HEALTH_BLOCK_HEIGHT = 22;
-    private static final int HUD_BG_COLOR = 0xB0101016;
-    private static final int HUD_SHADOW_COLOR = 0x50000000;
-    private static final int HUD_TEXT_PRIMARY = 0xFFFFFFFF;
-    private static final int HUD_TEXT_SECONDARY = 0xFFC7CCD1;
-    private static final int HUD_TEXT_MUTED = 0xFF9EA6AD;
+    private static final int PADDING = 10;
+    private static final int MIN_WIDTH = 156;
+    private static final int MAX_WIDTH = 220;
+    private static final int BADGE_GAP = 12;
 
     private final Minecraft minecraft;
     private boolean warned;
@@ -51,113 +47,146 @@ public final class DetailPanelRenderer {
     private void renderPanel(TargetPresentationSnapshot snapshot, ScaledResolution resolution) {
         PresentationStyle style = PresentationStyle.fromConfig();
         String title = TargetingConfig.showTargetName && !snapshot.getName().isEmpty()
-            ? snapshot.getName() : "Locked Target";
-        boolean drawHealth = TargetingConfig.showHealthBar;
-        String[] lines = new String[4];
-        int[] colors = new int[4];
-        int lineCount = populateLines(snapshot, lines, colors, style);
+            ? snapshot.getName() : "Target";
+        boolean health = TargetingConfig.showHealthBar;
+        boolean details = !TargetingConfig.compactHudMode;
+        String hp = health ? healthValue(snapshot.getHealth()) + " / "
+            + healthValue(snapshot.getMaxHealth()) : "";
+        List<String> badges = details ? badges(snapshot) : new ArrayList<>();
+        String condition = details && TargetingConfig.showVulnerabilities
+            ? snapshot.getVulnerabilityText() : "";
 
-        int contentWidth = minecraft.fontRenderer.getStringWidth(title);
-        if (drawHealth) {
-            contentWidth = Math.max(contentWidth, HUD_BAR_WIDTH);
-            contentWidth = Math.max(contentWidth, minecraft.fontRenderer.getStringWidth(healthText(snapshot)));
+        int wantedWidth = Math.max(MIN_WIDTH,
+            PADDING * 2 + 11 + minecraft.fontRenderer.getStringWidth(title)
+                + (health ? minecraft.fontRenderer.getStringWidth(hp) + 10 : 0));
+        wantedWidth = Math.max(wantedWidth, PADDING * 2 + badgeWidth(badges));
+        if (!condition.isEmpty()) {
+            wantedWidth = Math.max(wantedWidth,
+                PADDING * 2 + minecraft.fontRenderer.getStringWidth(condition));
         }
-        for (int index = 0; index < lineCount; index++) {
-            contentWidth = Math.max(contentWidth, minecraft.fontRenderer.getStringWidth(lines[index]));
-        }
+        wantedWidth = Math.min(MAX_WIDTH, wantedWidth);
 
-        int panelWidth = Math.max(HUD_MIN_WIDTH, contentWidth + HUD_PADDING * 2);
-        int panelHeight = HUD_PADDING + HUD_TITLE_GAP + HUD_PADDING - 2 + lineCount * HUD_VALUE_GAP;
-        if (drawHealth) {
-            panelHeight += HUD_HEALTH_BLOCK_HEIGHT;
-        }
+        int panelHeight = 8 + 14 + (health ? 11 : 0)
+            + (!badges.isEmpty() ? 11 : 0) + (!condition.isEmpty() ? 11 : 0) + 7;
         PanelLayout layout = PanelLayoutCalculator.calculate(
-            resolution.getScaledWidth(),
-            resolution.getScaledHeight(),
-            panelWidth,
-            panelHeight,
+            resolution.getScaledWidth(), resolution.getScaledHeight(),
+            wantedWidth, panelHeight,
             PanelAnchor.fromConfig(TargetingConfig.hudAnchor),
-            TargetingConfig.hudOffsetX,
-            TargetingConfig.hudOffsetY,
-            HUD_MARGIN
+            TargetingConfig.hudOffsetX, TargetingConfig.hudOffsetY, HUD_MARGIN
         );
+        int x = layout.getX();
+        int y = layout.getY();
+        int width = layout.getWidth();
+        int contentWidth = Math.max(0, width - PADDING * 2);
+        CrestPanelPainter.frame(x, y, width, layout.getHeight(), false, style);
 
-        Gui.drawRect(layout.getX() + 1, layout.getY() + 1,
-            layout.getX() + layout.getWidth() + 1, layout.getY() + layout.getHeight() + 1,
-            style.applyHudOpacity(HUD_SHADOW_COLOR));
-        Gui.drawRect(layout.getX(), layout.getY(),
-            layout.getX() + layout.getWidth(), layout.getY() + layout.getHeight(),
-            style.applyHudOpacity(HUD_BG_COLOR));
-        Gui.drawRect(layout.getX(), layout.getY(),
-            layout.getX() + layout.getWidth(), layout.getY() + HUD_ACCENT_HEIGHT,
-            style.applyHudOpacity(style.getStatusColor(snapshot.getStatus())));
-
-        int textX = layout.getX() + HUD_PADDING;
-        int currentY = layout.getY() + HUD_PADDING;
-        minecraft.fontRenderer.drawString(title, textX, currentY, titleColor(snapshot.getStatus()));
-        currentY += HUD_TITLE_GAP;
-
-        if (drawHealth) {
-            renderHealth(snapshot, textX, currentY, style);
-            currentY += HUD_HEALTH_BLOCK_HEIGHT;
+        int titleY = y + 8;
+        CrestPanelPainter.diamond(x + PADDING + 2, titleY + 4,
+            style.applyHudOpacity(CrestPanelPainter.GOLD));
+        int titleX = x + PADDING + 12;
+        int hpWidth = health ? minecraft.fontRenderer.getStringWidth(hp) : 0;
+        int nameWidth = Math.max(0, x + width - PADDING - titleX
+            - (health ? hpWidth + 8 : 0));
+        minecraft.fontRenderer.drawStringWithShadow(
+            fit(title, nameWidth), titleX, titleY,
+            style.applyHudOpacity(snapshot.getStatus() == PresentationStatus.OCCLUDED
+                ? CrestPanelPainter.MUTED : CrestPanelPainter.TEXT)
+        );
+        if (health) {
+            minecraft.fontRenderer.drawString(hp,
+                x + width - PADDING - hpWidth, titleY,
+                style.applyHudOpacity(CrestPanelPainter.MUTED));
         }
-        for (int index = 0; index < lineCount; index++) {
-            minecraft.fontRenderer.drawString(lines[index], textX, currentY, colors[index]);
-            currentY += HUD_VALUE_GAP;
+
+        int nextY = titleY + 14;
+        if (health) {
+            CrestPanelPainter.healthBar(x + PADDING, nextY, contentWidth, 6,
+                snapshot.getHealthRatio(), style.getStatusColor(snapshot.getStatus()),
+                false, style);
+            nextY += 11;
+        }
+        if (!badges.isEmpty()) {
+            drawBadges(badges, x + PADDING, nextY, contentWidth, snapshot, style);
+            nextY += 11;
+        }
+        if (!condition.isEmpty()) {
+            Gui.drawRect(x + PADDING, nextY - 1,
+                x + width - PADDING, nextY,
+                style.applyHudOpacity(CrestPanelPainter.GOLD_DIM));
+            minecraft.fontRenderer.drawString(
+                fit(condition, contentWidth), x + PADDING, nextY + 2,
+                style.applyHudOpacity(CrestPanelPainter.MUTED));
         }
     }
 
-    private int populateLines(TargetPresentationSnapshot snapshot, String[] lines, int[] colors,
-                              PresentationStyle style) {
-        int count = 0;
-        if (!TargetingConfig.compactHudMode && TargetingConfig.showDamagePrediction) {
-            if (snapshot.getPredictedDamage() <= 0.0F) {
-                lines[count] = "Damage: no effective damage";
-                colors[count++] = HUD_TEXT_MUTED;
-            } else {
-                lines[count] = String.format("Damage: %.1f", snapshot.getPredictedDamage());
-                colors[count++] = style.getStatusColor(snapshot.getStatus());
+    private List<String> badges(TargetPresentationSnapshot snapshot) {
+        List<String> badges = new ArrayList<>(3);
+        if (TargetingConfig.showDistance) {
+            badges.add(String.format(Locale.ROOT, "%.1fm", snapshot.getDistance()));
+        }
+        if (TargetingConfig.showDamagePrediction) {
+            badges.add(snapshot.getPredictedDamage() > 0.0F
+                ? String.format(Locale.ROOT, "DMG %.1f", snapshot.getPredictedDamage())
+                : "DMG --");
+        }
+        if (TargetingConfig.showHitsToKill) {
+            badges.add(snapshot.getHitsToKill() > 0
+                ? snapshot.getHitsToKill()
+                    + (snapshot.getHitsToKill() == 1 ? " HIT" : " HITS")
+                : "HITS --");
+        }
+        return badges;
+    }
+
+    private int badgeWidth(List<String> badges) {
+        int width = 0;
+        for (String badge : badges) {
+            width += minecraft.fontRenderer.getStringWidth(badge);
+        }
+        return width + Math.max(0, badges.size() - 1) * BADGE_GAP;
+    }
+
+    private void drawBadges(List<String> badges, int x, int y, int availableWidth,
+                            TargetPresentationSnapshot snapshot, PresentationStyle style) {
+        int used = 0;
+        for (String badge : badges) {
+            int badgeWidth = minecraft.fontRenderer.getStringWidth(badge);
+            int nextWidth = used == 0 ? badgeWidth : used + BADGE_GAP + badgeWidth;
+            if (nextWidth > availableWidth) {
+                break;
             }
-        }
-        if (!TargetingConfig.compactHudMode && TargetingConfig.showHitsToKill) {
-            if (snapshot.getHitsToKill() > 0) {
-                lines[count] = "Hits to Kill: " + snapshot.getHitsToKill()
-                    + (snapshot.getStatus() == PresentationStatus.LETHAL ? " (LETHAL)" : "");
-                colors[count++] = snapshot.getStatus() == PresentationStatus.LETHAL
-                    ? style.getStatusColor(snapshot.getStatus()) : HUD_TEXT_SECONDARY;
-            } else {
-                lines[count] = "Hits to Kill: N/A";
-                colors[count++] = HUD_TEXT_MUTED;
+            if (used > 0) {
+                Gui.drawRect(x + used + 5, y + 2, x + used + 6, y + 7,
+                    style.applyHudOpacity(CrestPanelPainter.GOLD_DIM));
+                used += BADGE_GAP;
             }
+            boolean lethal = snapshot.getStatus() == PresentationStatus.LETHAL
+                && (badge.endsWith("HIT") || badge.endsWith("HITS"));
+            minecraft.fontRenderer.drawString(badge, x + used, y,
+                style.applyHudOpacity(lethal
+                    ? style.getStatusColor(snapshot.getStatus())
+                    : CrestPanelPainter.MUTED));
+            used += badgeWidth;
         }
-        if (!TargetingConfig.compactHudMode && TargetingConfig.showVulnerabilities
-                && !snapshot.getVulnerabilityText().isEmpty()) {
-            lines[count] = "Status: " + snapshot.getVulnerabilityText();
-            colors[count++] = HUD_TEXT_SECONDARY;
-        }
-        if (!TargetingConfig.compactHudMode && TargetingConfig.showDistance) {
-            lines[count] = String.format("Distance: %.1fm", snapshot.getDistance());
-            colors[count++] = HUD_TEXT_SECONDARY;
-        }
-        return count;
     }
 
-    private void renderHealth(TargetPresentationSnapshot snapshot, int x, int y, PresentationStyle style) {
-        int fillWidth = Math.round(HUD_BAR_WIDTH * snapshot.getHealthRatio());
-        Gui.drawRect(x - 1, y - 1, x + HUD_BAR_WIDTH + 1, y + 5, style.applyHudOpacity(0xAA000000));
-        Gui.drawRect(x, y, x + HUD_BAR_WIDTH, y + 4, style.applyHudOpacity(0xFF2B2E33));
-        Gui.drawRect(x, y, x + fillWidth, y + 4,
-            style.applyHudOpacity(style.getStatusColor(snapshot.getStatus())));
-        minecraft.fontRenderer.drawString(healthText(snapshot), x, y + 8, HUD_TEXT_SECONDARY);
+    private String fit(String value, int maxWidth) {
+        if (maxWidth <= 0) {
+            return "";
+        }
+        if (minecraft.fontRenderer.getStringWidth(value) <= maxWidth) {
+            return value;
+        }
+        String ellipsis = "...";
+        int textWidth = maxWidth - minecraft.fontRenderer.getStringWidth(ellipsis);
+        return textWidth <= 0 ? "" : minecraft.fontRenderer.trimStringToWidth(value, textWidth)
+            + ellipsis;
     }
 
-    private static String healthText(TargetPresentationSnapshot snapshot) {
-        return String.format("HP %.1f/%.1f (%.0f%%)", snapshot.getHealth(), snapshot.getMaxHealth(),
-            snapshot.getHealthRatio() * 100.0F);
-    }
-
-    private static int titleColor(PresentationStatus status) {
-        return status == PresentationStatus.OCCLUDED ? HUD_TEXT_MUTED : HUD_TEXT_PRIMARY;
+    private static String healthValue(float value) {
+        return Math.abs(value - Math.round(value)) < 0.05F
+            ? Integer.toString(Math.round(value))
+            : String.format(Locale.ROOT, "%.1f", value);
     }
 
     private void warn(RuntimeException exception) {

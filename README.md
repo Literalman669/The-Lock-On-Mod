@@ -5,7 +5,7 @@ Zelda Targeting is a client-only lock-on targeting mod for Minecraft 1.12.2. It 
 ## 1.4.0 highlights
 
 - Rebuilt targeting state and camera flow with safer lock restoration.
-- Adaptive Hybrid HUD with a responsive target panel and boss presentation.
+- Adventure Crest HUD with a compact target plaque and a distinct boss banner.
 - A tubular, neon target ring whose health arc shrinks with the target's remaining health.
 - Shared green, orange, and red health states across the target ring and HUD.
 - Preset-first, seven-page configuration flow with transactional Save, Cancel, and Reset actions.
@@ -50,6 +50,10 @@ Vanilla first and third person are the automatic fallback. Shoulder Surfing Relo
 Epic Fight 2.2.8 is optional. In its Battle mode with SSR active, Zelda Targeting faces the player's body and Epic Fight's melee attacks toward the target. If SSR's crosshair is set to its default **Adaptive** mode, Zelda Targeting temporarily requests SSR's dynamic crosshair during the lock so the crosshair and Epic Fight's attack direction agree. The chosen shoulder view remains in place, and SSR's saved crosshair setting is untouched. SSR's **Dynamic** mode also works; a user-selected **Static** mode keeps its static crosshair position while Epic Fight's melee attacks face the target.
 
 Epic Fight and Zelda Targeting both use **R** by default. Rebind either **Toggle Battle/Mining Mode** or **Acquire/Release Target** in Minecraft's Controls menu when using both mods.
+
+## Target HUD
+
+Regular targets use a compact, gold-edged plaque with their name, health bar, and enabled combat readouts. Boss targets use a wider banner near the top center of the screen. The boss banner is enabled by default for new settings and appears for the Wither, Ender Dragon, or targets with at least 100 maximum health. When locked onto a vanilla boss, its duplicate vanilla health bar is hidden until the lock ends. Existing configurations keep their saved **Boss Style Panel** choice; turn it on under **HUD** to see the boss banner.
 
 Better Third Person is not supported. It conflicts with Shoulder Surfing Reloaded's camera ownership model and should not be combined with it.
 

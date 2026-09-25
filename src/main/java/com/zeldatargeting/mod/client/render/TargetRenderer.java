@@ -4,6 +4,7 @@ import com.zeldatargeting.mod.ZeldaTargetingMod;
 import com.zeldatargeting.mod.client.TargetingManager;
 import com.zeldatargeting.mod.client.presentation.TargetPresentationSnapshot;
 import com.zeldatargeting.mod.client.presentation.TargetPresentationSnapshotFactory;
+import com.zeldatargeting.mod.client.presentation.core.BossBarSuppressionPolicy;
 import com.zeldatargeting.mod.client.presentation.render.BossPanelRenderer;
 import com.zeldatargeting.mod.client.presentation.render.DetailPanelRenderer;
 import com.zeldatargeting.mod.client.presentation.render.SoftAimRenderer;
@@ -12,6 +13,8 @@ import com.zeldatargeting.mod.client.presentation.render.TargetRingRenderer;
 import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.boss.EntityDragon;
+import net.minecraft.entity.boss.EntityWither;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -34,6 +37,24 @@ public final class TargetRenderer {
         bossPanelRenderer = new BossPanelRenderer();
         softAimRenderer = new SoftAimRenderer();
         targetHistoryRenderer = new TargetHistoryRenderer();
+    }
+
+    @SubscribeEvent
+    public void onVanillaBossBar(RenderGameOverlayEvent.BossInfo event) {
+        TargetingManager manager = TargetingManager.getInstance();
+        Entity target = manager == null ? null : manager.getCurrentTarget();
+        boolean tracking = manager != null && manager.isActive();
+        boolean vanillaBoss = target instanceof EntityDragon
+            || target instanceof EntityWither;
+        if (BossBarSuppressionPolicy.shouldReplace(
+                TargetingConfig.bossStylePanel,
+                tracking,
+                vanillaBoss,
+                target == null ? "" : target.getName(),
+                event.getBossInfo().getName().getUnformattedText())) {
+            event.setCanceled(true);
+            event.setIncrement(0);
+        }
     }
 
     @SubscribeEvent

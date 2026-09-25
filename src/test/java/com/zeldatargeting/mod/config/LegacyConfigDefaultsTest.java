@@ -43,7 +43,7 @@ public class LegacyConfigDefaultsTest {
     @Test
     public void resetRestoresHudAndEntityFilterDefaults() {
         TargetingConfig.showReticle = false;
-        TargetingConfig.bossStylePanel = true;
+        TargetingConfig.bossStylePanel = false;
         TargetingConfig.targetPlayers = true;
 
         TargetingConfig.resetToDefaults();
@@ -57,7 +57,7 @@ public class LegacyConfigDefaultsTest {
         assertFalse(TargetingConfig.compactHudMode);
         assertFalse(TargetingConfig.softAimIndicator);
         assertFalse(TargetingConfig.targetHistoryEnabled);
-        assertFalse(TargetingConfig.bossStylePanel);
+        assertTrue(TargetingConfig.bossStylePanel);
         assertEquals("top-right", TargetingConfig.hudAnchor);
         assertTrue(TargetingConfig.targetHostileMobs);
         assertTrue(TargetingConfig.targetNeutralMobs);

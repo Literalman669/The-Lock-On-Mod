@@ -26,7 +26,7 @@ public class TargetingSettings {
     public boolean compactHudMode = false;
     public boolean softAimIndicator = false;
     public boolean targetHistoryEnabled = false;
-    public boolean bossStylePanel = false;
+    public boolean bossStylePanel = true;
     public String hudAnchor = "top-right";
     public int hudOffsetX = 0;
     public int hudOffsetY = 0;

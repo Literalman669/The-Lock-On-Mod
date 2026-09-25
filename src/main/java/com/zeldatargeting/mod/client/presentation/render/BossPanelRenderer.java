@@ -3,9 +3,6 @@ package com.zeldatargeting.mod.client.presentation.render;
 import com.zeldatargeting.mod.ZeldaTargetingMod;
 import com.zeldatargeting.mod.client.presentation.TargetPresentationSnapshot;
 import com.zeldatargeting.mod.client.presentation.core.BossEligibility;
-import com.zeldatargeting.mod.client.presentation.core.PanelAnchor;
-import com.zeldatargeting.mod.client.presentation.core.PanelLayout;
-import com.zeldatargeting.mod.client.presentation.core.PanelLayoutCalculator;
 import com.zeldatargeting.mod.client.presentation.core.PresentationStyle;
 import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.Minecraft;
@@ -14,16 +11,15 @@ import net.minecraft.client.gui.ScaledResolution;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import java.util.Locale;
+
 @SideOnly(Side.CLIENT)
 public final class BossPanelRenderer {
     private static final int HUD_MARGIN = 8;
-    private static final int HUD_PADDING = 8;
-    private static final int HUD_ACCENT_HEIGHT = 2;
-    private static final int HUD_TITLE_GAP = 14;
-    private static final int HUD_BG_COLOR = 0xB0101016;
-    private static final int HUD_SHADOW_COLOR = 0x50000000;
-    private static final int BOSS_BAR_WIDTH = 200;
-    private static final int BOSS_BAR_HEIGHT = 8;
+    private static final int HUD_TOP = 30;
+    private static final int BOSS_MIN_WIDTH = 220;
+    private static final int BOSS_MAX_WIDTH = 320;
+    private static final int BAR_INSET = 15;
     private static final float BOSS_HP_THRESHOLD = 100.0F;
 
     private final Minecraft minecraft;
@@ -35,7 +31,9 @@ public final class BossPanelRenderer {
 
     public boolean render(TargetPresentationSnapshot snapshot, ScaledResolution resolution) {
         if (!TargetingConfig.bossStylePanel || snapshot == null || resolution == null
-                || !BossEligibility.isEligible(snapshot.isVanillaBoss(), snapshot.getMaxHealth(), BOSS_HP_THRESHOLD)) {
+                || resolution.getScaledWidth() < 96 || resolution.getScaledHeight() < 80
+                || !BossEligibility.isEligible(snapshot.isVanillaBoss(),
+                    snapshot.getMaxHealth(), BOSS_HP_THRESHOLD)) {
             return false;
         }
         try {
@@ -48,40 +46,70 @@ public final class BossPanelRenderer {
     }
 
     private void renderPanel(TargetPresentationSnapshot snapshot, ScaledResolution resolution) {
+        int screenWidth = resolution.getScaledWidth();
+        int screenHeight = resolution.getScaledHeight();
+        int width = Math.min(screenWidth - HUD_MARGIN * 2,
+            Math.min(BOSS_MAX_WIDTH,
+                Math.max(BOSS_MIN_WIDTH, Math.round(screenWidth * 0.72F))));
+        boolean health = TargetingConfig.showHealthBar;
+        boolean compact = TargetingConfig.compactHudMode;
+        int height = health ? (compact ? 52 : 62) : 42;
+        if (width < 80 || screenHeight < height + HUD_MARGIN * 2) {
+            return;
+        }
+        int x = (screenWidth - width) / 2;
+        int y = Math.min(HUD_TOP, screenHeight - height - HUD_MARGIN);
         PresentationStyle style = PresentationStyle.fromConfig();
-        int panelWidth = BOSS_BAR_WIDTH + HUD_PADDING * 2;
-        int panelHeight = HUD_PADDING + HUD_TITLE_GAP + BOSS_BAR_HEIGHT + 6 + HUD_PADDING;
-        int centerOffsetY = (resolution.getScaledHeight() - panelHeight) / 2 - 22;
-        PanelLayout layout = PanelLayoutCalculator.calculate(
-            resolution.getScaledWidth(), resolution.getScaledHeight(), panelWidth, panelHeight,
-            PanelAnchor.CENTER, 0, centerOffsetY, HUD_MARGIN
-        );
-        String title = snapshot.getName().isEmpty() ? "Boss" : snapshot.getName();
-        String hpText = String.format("%.0f / %.0f", snapshot.getHealth(), snapshot.getMaxHealth());
+        CrestPanelPainter.frame(x, y, width, height, true, style);
 
-        Gui.drawRect(layout.getX() + 1, layout.getY() + 1,
-            layout.getX() + layout.getWidth() + 1, layout.getY() + layout.getHeight() + 1,
-            style.applyHudOpacity(HUD_SHADOW_COLOR));
-        Gui.drawRect(layout.getX(), layout.getY(),
-            layout.getX() + layout.getWidth(), layout.getY() + layout.getHeight(),
-            style.applyHudOpacity(HUD_BG_COLOR));
-        Gui.drawRect(layout.getX(), layout.getY(),
-            layout.getX() + layout.getWidth(), layout.getY() + HUD_ACCENT_HEIGHT,
-            style.applyHudOpacity(style.getStatusColor(snapshot.getStatus())));
+        int centerX = x + width / 2;
+        CrestPanelPainter.diamond(centerX, y + 8,
+            style.applyHudOpacity(CrestPanelPainter.GOLD));
+        String heading = "B O S S";
+        int headingWidth = minecraft.fontRenderer.getStringWidth(heading);
+        minecraft.fontRenderer.drawString(heading,
+            centerX - headingWidth / 2, y + 13,
+            style.applyHudOpacity(CrestPanelPainter.GOLD));
 
-        int titleX = layout.getX() + layout.getWidth() / 2 - minecraft.fontRenderer.getStringWidth(title) / 2;
-        minecraft.fontRenderer.drawString(title, titleX, layout.getY() + HUD_PADDING, 0xFFFFFFFF);
-        int barX = layout.getX() + HUD_PADDING;
-        int barY = layout.getY() + HUD_PADDING + HUD_TITLE_GAP;
-        int fillWidth = Math.round(BOSS_BAR_WIDTH * snapshot.getHealthRatio());
-        Gui.drawRect(barX - 1, barY - 1, barX + BOSS_BAR_WIDTH + 1, barY + BOSS_BAR_HEIGHT + 1,
-            style.applyHudOpacity(0xAA000000));
-        Gui.drawRect(barX, barY, barX + BOSS_BAR_WIDTH, barY + BOSS_BAR_HEIGHT,
-            style.applyHudOpacity(0xFF2B2E33));
-        Gui.drawRect(barX, barY, barX + fillWidth, barY + BOSS_BAR_HEIGHT,
-            style.applyHudOpacity(style.getStatusColor(snapshot.getStatus())));
-        int hpX = layout.getX() + layout.getWidth() / 2 - minecraft.fontRenderer.getStringWidth(hpText) / 2;
-        minecraft.fontRenderer.drawString(hpText, hpX, barY + BOSS_BAR_HEIGHT + 2, 0xFFC7CCD1);
+        String name = TargetingConfig.showTargetName && !snapshot.getName().isEmpty()
+            ? snapshot.getName() : "Boss Target";
+        name = fit(name, width - 48);
+        int nameWidth = minecraft.fontRenderer.getStringWidth(name);
+        minecraft.fontRenderer.drawStringWithShadow(name,
+            centerX - nameWidth / 2, y + 25,
+            style.applyHudOpacity(CrestPanelPainter.TEXT));
+        Gui.drawRect(x + 15, y + 29, centerX - nameWidth / 2 - 8, y + 30,
+            style.applyHudOpacity(CrestPanelPainter.GOLD_DIM));
+        Gui.drawRect(centerX + nameWidth / 2 + 8, y + 29,
+            x + width - 15, y + 30,
+            style.applyHudOpacity(CrestPanelPainter.GOLD_DIM));
+
+        if (health) {
+            int barX = x + BAR_INSET;
+            int barY = y + 37;
+            int barWidth = width - BAR_INSET * 2;
+            CrestPanelPainter.healthBar(barX, barY, barWidth, 9,
+                snapshot.getHealthRatio(), style.getStatusColor(snapshot.getStatus()),
+                true, style);
+            if (!compact) {
+                String hp = String.format(Locale.ROOT, "%.0f / %.0f HP",
+                    snapshot.getHealth(), snapshot.getMaxHealth());
+                int hpWidth = minecraft.fontRenderer.getStringWidth(hp);
+                minecraft.fontRenderer.drawString(hp,
+                    centerX - hpWidth / 2, barY + 12,
+                    style.applyHudOpacity(CrestPanelPainter.MUTED));
+            }
+        }
+    }
+
+    private String fit(String value, int maxWidth) {
+        if (minecraft.fontRenderer.getStringWidth(value) <= maxWidth) {
+            return value;
+        }
+        String ellipsis = "...";
+        int textWidth = maxWidth - minecraft.fontRenderer.getStringWidth(ellipsis);
+        return textWidth <= 0 ? "" : minecraft.fontRenderer.trimStringToWidth(value, textWidth)
+            + ellipsis;
     }
 
     private void warn(RuntimeException exception) {
