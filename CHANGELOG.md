@@ -8,6 +8,7 @@
 - Adaptive Hybrid HUD components, target-history support, and accessibility options.
 - A tubular glowing target ring with a remaining-health arc.
 - Optional Shoulder Surfing Reloaded 2.9.x integration that preserves its shoulder camera during lock-on.
+- Optional Epic Fight 2.2.8 compatibility, including simultaneous use with Shoulder Surfing Reloaded.
 
 ### Changed
 
@@ -26,6 +27,7 @@
 - Target-history capture is more consistent across target changes.
 - Configuration navigation, control layout, and button rendering work consistently across the seven pages.
 - Shoulder Surfing lock-on aligns aim to SSR's active attack ray while preserving its shoulder side and offset.
-- Removed forced SSR adaptive-crosshair activation, which could displace the crosshair and return null hit results.
+- Epic Fight Battle mode faces melee attacks toward the locked target while SSR keeps the shoulder camera; SSR's Adaptive crosshair changes to dynamic only for that lock.
+- SSR's Adaptive crosshair no longer switches mode for ordinary SSR-only lock-on.
 - Removed the second WASD rotation that could reverse or mix movement around close targets.
 - Unlocked camera input no longer participates in a reconstructed compatibility yaw.

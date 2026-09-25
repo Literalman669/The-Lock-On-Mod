@@ -3,6 +3,7 @@ package com.zeldatargeting.mod.client.camera.vanilla;
 import com.zeldatargeting.mod.ZeldaTargetingMod;
 import com.zeldatargeting.mod.client.camera.CameraRuntimeAdapter;
 import com.zeldatargeting.mod.client.camera.compat.CameraRotationPolicy;
+import com.zeldatargeting.mod.client.camera.compat.EpicFightAimPolicy;
 import com.zeldatargeting.mod.client.camera.compat.ShoulderAimSolver;
 import com.zeldatargeting.mod.client.camera.compat.ShoulderCameraState;
 import com.zeldatargeting.mod.client.camera.compat.ShoulderSurfingBridge;
@@ -20,6 +21,7 @@ import com.zeldatargeting.mod.config.TargetingConfig;
 import com.zeldatargeting.mod.client.targeting.core.TargetAnchorResolver;
 import com.zeldatargeting.mod.client.targeting.core.TargetObservation;
 import com.zeldatargeting.mod.client.targeting.core.TargetPoint;
+import com.zeldatargeting.mod.client.math.CameraMath;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -40,6 +42,7 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
     private boolean applicationDisabled;
     private boolean translationWarningLogged;
     private boolean applicationWarningLogged;
+    private float targetBodyYaw = Float.NaN;
 
     public VanillaCameraAdapter() {
         this(
@@ -150,6 +153,7 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
         EntityLivingBase target = observation == null ? null : observation.getReference();
         EntityPlayer player = minecraft.player;
         if (player == null || target == null) {
+            targetBodyYaw = Float.NaN;
             return invalidFrameInput(
                 collision,
                 elapsedMillis,
@@ -183,15 +187,25 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
         double targetDeltaX = focus.getX() - playerX;
         double targetDeltaY = focusY - playerY;
         double targetDeltaZ = focus.getZ() - playerZ;
+        ShoulderCameraState shoulder = ShoulderCameraState.inactive();
         if (TargetingConfig.ssrCompensationEnabled) {
-            ShoulderCameraState shoulder = shoulderSurfing.captureState();
-            ShoulderAimSolver.AimVector compensated = ShoulderAimSolver.compensate(
-                targetDeltaX, targetDeltaY, targetDeltaZ, shoulder
-            );
-            targetDeltaX = compensated.getX();
-            targetDeltaY = compensated.getY();
-            targetDeltaZ = compensated.getZ();
+            shoulder = shoulderSurfing.captureState();
         }
+        targetBodyYaw = shoulder.isActive() && !freeLook
+            ? CameraMath.lookAt(
+                targetDeltaX, targetDeltaY, targetDeltaZ
+            ).getYaw()
+            : Float.NaN;
+        ShoulderAimSolver.AimVector aim = EpicFightAimPolicy.aim(
+            targetDeltaX,
+            targetDeltaY,
+            targetDeltaZ,
+            shoulder,
+            ZeldaTargetingMod.getEpicFightBridge().isBattleMode()
+        );
+        targetDeltaX = aim.getX();
+        targetDeltaY = aim.getY();
+        targetDeltaZ = aim.getZ();
         return new CameraInput(
             player.rotationYaw,
             player.rotationPitch,
@@ -233,6 +247,10 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
                 minecraft.player.prevRotationPitch = minecraft.player.rotationPitch;
                 minecraft.player.rotationYaw = frame.getYaw();
                 minecraft.player.rotationPitch = frame.getPitch();
+                if (!Float.isNaN(targetBodyYaw)) {
+                    minecraft.player.prevRenderYawOffset = targetBodyYaw;
+                    minecraft.player.renderYawOffset = targetBodyYaw;
+                }
             }
             transparency.setAlpha(frame.getPlayerAlpha());
         } catch (RuntimeException failure) {
@@ -242,6 +260,7 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
 
     @Override
     public void restoreImmediate(PerspectiveDecision decision) {
+        targetBodyYaw = Float.NaN;
         if (decision != null && decision.shouldApply()) {
             try {
                 minecraft.gameSettings.thirdPersonView = decision.getPerspective();
@@ -258,6 +277,7 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
 
     @Override
     public void clearFrame() {
+        targetBodyYaw = Float.NaN;
         currentFrame = null;
         capturedState = null;
         transparency.reset();
@@ -390,6 +410,7 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
     private void handleApplicationFailure(String operation, RuntimeException failure) {
         warnApplicationOnce(operation, failure);
         applicationDisabled = true;
+        targetBodyYaw = Float.NaN;
         try {
             if (capturedState != null) {
                 minecraft.gameSettings.thirdPersonView = capturedState.getPerspective();

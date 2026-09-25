@@ -4,10 +4,12 @@ import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.function.BooleanSupplier;
 
 /**
- * Read-only optional link to Shoulder Surfing Reloaded 2.9.x. SSR owns the
- * shoulder camera and crosshair; Zelda only samples its current ray geometry.
+ * Optional link to Shoulder Surfing Reloaded 2.9.x. Camera state is read-only;
+ * SSR's adaptive-item callback selects its own dynamic crosshair when needed.
  */
 public final class ShoulderSurfingBridge {
     private static final String INSTANCE_CLASS =
@@ -18,6 +20,10 @@ public final class ShoulderSurfingBridge {
         "com.teamderpy.shouldersurfing.config.Config";
     private static final String CROSSHAIR_TYPE_CLASS =
         "com.teamderpy.shouldersurfing.config.CrosshairType";
+    private static final String REGISTRAR_CLASS =
+        "com.teamderpy.shouldersurfing.plugin.ShoulderSurfingRegistrar";
+    private static final String ADAPTIVE_CALLBACK_CLASS =
+        "com.teamderpy.shouldersurfing.api.callback.IAdaptiveItemCallback";
 
     private final Logger logger;
     private final Method getInstance;
@@ -124,6 +130,63 @@ public final class ShoulderSurfingBridge {
         } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
             disableAfterInvocationFailure(failure);
             return false;
+        }
+    }
+
+    public boolean isAdaptiveCrosshairMode() {
+        if (!operational) {
+            return false;
+        }
+        try {
+            Object crosshairType = getCrosshairType.invoke(clientConfig);
+            return crosshairType instanceof Enum
+                && "ADAPTIVE".equals(((Enum<?>) crosshairType).name());
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
+            disableAfterInvocationFailure(failure);
+            return false;
+        }
+    }
+
+    public void registerAdaptiveCrosshair(BooleanSupplier shouldUseDynamic) {
+        if (!operational || shouldUseDynamic == null) {
+            return;
+        }
+        try {
+            Class<?> callbackType = Class.forName(ADAPTIVE_CALLBACK_CLASS);
+            Class<?> registrarType = Class.forName(REGISTRAR_CLASS);
+            Object registrar = registrarType.getMethod("getInstance").invoke(null);
+            Object callback = Proxy.newProxyInstance(
+                callbackType.getClassLoader(),
+                new Class<?>[] { callbackType },
+                (proxy, method, args) -> {
+                    if ("isHoldingAdaptiveItem".equals(method.getName())) {
+                        try {
+                            return shouldUseDynamic.getAsBoolean();
+                        } catch (RuntimeException failure) {
+                            return false;
+                        }
+                    }
+                    if ("toString".equals(method.getName())) {
+                        return "ZeldaTargetingEpicFightCrosshair";
+                    }
+                    if ("hashCode".equals(method.getName())) {
+                        return System.identityHashCode(proxy);
+                    }
+                    if ("equals".equals(method.getName())) {
+                        return args != null && args.length == 1 && proxy == args[0];
+                    }
+                    return null;
+                }
+            );
+            registrarType.getMethod("registerAdaptiveItemCallback", callbackType)
+                .invoke(registrar, callback);
+            if (logger != null) {
+                logger.info("SSR adaptive crosshair callback registered for Epic Fight lock-on");
+            }
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
+            if (logger != null) {
+                logger.warn("SSR adaptive crosshair callback could not be registered", failure);
+            }
         }
     }
 

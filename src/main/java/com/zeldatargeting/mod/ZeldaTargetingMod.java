@@ -1,7 +1,11 @@
 package com.zeldatargeting.mod;
 
+import com.zeldatargeting.mod.client.TargetingManager;
+import com.zeldatargeting.mod.client.camera.compat.EpicFightBridge;
 import com.zeldatargeting.mod.client.camera.compat.ShoulderSurfingBridge;
+import com.zeldatargeting.mod.config.TargetingConfig;
 import com.zeldatargeting.mod.proxy.CommonProxy;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
@@ -26,6 +30,7 @@ public class ZeldaTargetingMod {
     private static Logger logger;
     private static ShoulderSurfingBridge shoulderSurfingBridge =
         ShoulderSurfingBridge.unavailable();
+    private static EpicFightBridge epicFightBridge = EpicFightBridge.unavailable();
     
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
@@ -45,11 +50,29 @@ public class ZeldaTargetingMod {
             Loader.isModLoaded("shouldersurfing"),
             logger
         );
+        epicFightBridge = EpicFightBridge.detect(
+            Loader.isModLoaded("epicfight"),
+            logger
+        );
         
         // Note: Removed network initialization as it's not needed for this client-side mod
         // and was causing crashes due to FML networking changes
         
         proxy.init(event);
+        if (Loader.isModLoaded("epicfight")) {
+            shoulderSurfingBridge.registerAdaptiveCrosshair(() -> {
+                Minecraft minecraft = Minecraft.getMinecraft();
+                TargetingManager manager = TargetingManager.getInstance();
+                return TargetingConfig.ssrCompensationEnabled
+                    && manager != null
+                    && manager.isActive()
+                    && minecraft.player != null
+                    && minecraft.getRenderViewEntity() == minecraft.player
+                    && shoulderSurfingBridge.isActive()
+                    && shoulderSurfingBridge.isAdaptiveCrosshairMode()
+                    && epicFightBridge.isBattleMode();
+            });
+        }
     }
     
     @EventHandler
@@ -73,5 +96,9 @@ public class ZeldaTargetingMod {
 
     public static ShoulderSurfingBridge getShoulderSurfingBridge() {
         return shoulderSurfingBridge;
+    }
+
+    public static EpicFightBridge getEpicFightBridge() {
+        return epicFightBridge;
     }
 }
