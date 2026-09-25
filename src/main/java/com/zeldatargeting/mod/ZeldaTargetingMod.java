@@ -32,17 +32,19 @@ public class ZeldaTargetingMod {
         logger = event.getModLog();
         logger.info("Zelda Targeting Mod - Pre-Initialization");
         
-        shoulderSurfingBridge = ShoulderSurfingBridge.detect(
-            Loader.isModLoaded("shouldersurfing"),
-            logger
-        );
-        
         proxy.preInit(event);
     }
     
     @EventHandler
     public void init(FMLInitializationEvent event) {
         logger.info("Zelda Targeting Mod - Initialization");
+
+        // All mods have completed pre-initialization by this point. SSR creates
+        // its client config there, before its camera singleton can be queried.
+        shoulderSurfingBridge = ShoulderSurfingBridge.detect(
+            Loader.isModLoaded("shouldersurfing"),
+            logger
+        );
         
         // Note: Removed network initialization as it's not needed for this client-side mod
         // and was causing crashes due to FML networking changes

@@ -4,7 +4,7 @@
 
 **Goal:** Remove Better Third Person support and make Shoulder Surfing Reloaded 2.9.x provide stable shoulder-preserving lock-on aim, crosshair alignment, mouse ownership, and movement on Minecraft 1.12.2.
 
-**Architecture:** A pure Java solver compensates the lock direction for SSR's lateral ray origin. A reflection-only bridge contains the optional SSR dependency and adaptive-crosshair registration. The Minecraft adapter applies one compensated player rotation, delegates camera translation to SSR when active, and never remaps WASD or reconstructs mouse deltas.
+**Architecture:** A pure Java solver compensates the lock direction for SSR's lateral ray origin. A reflection-only bridge samples SSR's camera offset and active crosshair mode without changing either. The Minecraft adapter applies one compensated player rotation for SSR's static ray, delegates camera translation to SSR when active, and never remaps WASD or reconstructs mouse deltas.
 
 **Tech Stack:** Java 8, Minecraft 1.12.2, Forge 14.23.5.2859, ForgeGradle 3, JUnit 4.13.2, optional Shoulder Surfing Reloaded 2.9.6 reflection surface.
 
@@ -12,7 +12,7 @@
 
 ## Runtime Validation Amendment
 
-The original Task 1 convergence path was implemented and unit-tested, then rejected by real-client A/B testing because SSR's dynamic projection still separated the crosshair from the target and returned null hit results. The final implementation replaces `ShoulderAimSolver` with the tested `ShoulderOffsetSession`: lock start centers SSR's runtime X/Y values without saving them, lock end restores the exact values, and no adaptive callback is registered. The task list below remains the execution record for the superseded hypothesis.
+The first convergence experiment failed because it registered an adaptive-item callback that forced SSR's dynamic crosshair during every lock. A temporary implementation centered SSR's runtime offset instead. The current implementation restores `ShoulderAimSolver` for SSR's static ray, leaves the shoulder position intact, and uses the eye ray when SSR itself selects a dynamic crosshair. No adaptive callback is registered. The task list below records the original workflow and contains superseded steps.
 
 ## Global Constraints
 

@@ -2,13 +2,13 @@
 
 Date: 2026-08-22
 
-Status: Approved; amended after real-client runtime validation
+Status: Historical design; current behavior recorded below
 
 ## Runtime Validation Amendment
 
-Live testing in the real CurseForge 1.12.2 instance invalidated the shoulder-ray convergence hypothesis below. Forcing SSR's adaptive crosshair displaced it from Zelda's centered target and produced null hit results even when the mathematical shoulder ray converged in isolation.
+The first live experiment failed because it **forced** SSR's adaptive crosshair during every lock. That changed SSR's ray mode and displaced the crosshair. Centering SSR's runtime offsets was used as a temporary workaround.
 
-The implemented compatibility policy instead centers SSR's runtime-only X/Y offset for the duration of a Zelda lock, uses the ordinary player-eye target direction, and restores the exact SSR offset on release. SSR's saved configuration is never rewritten. The adaptive callback and `ShoulderAimSolver` are removed. The remaining sections document the superseded hypothesis and should not be treated as current behavior.
+The current implementation leaves SSR's shoulder offsets and crosshair mode untouched. It samples SSR's active mode each frame: static crosshair uses `ShoulderAimSolver` to align the shifted ray, while dynamic or adaptive-item crosshair uses the ordinary eye ray. Packaged Forge 1.12.2 testing confirmed both shoulder sides, melee hits, free look, movement, and a bow hit. The remaining sections document the original design and may describe experiments that were later changed.
 
 ## Summary
 

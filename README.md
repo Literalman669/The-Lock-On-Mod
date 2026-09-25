@@ -9,7 +9,7 @@ Zelda Targeting is a client-only lock-on targeting mod for Minecraft 1.12.2. It 
 - A tubular, neon target ring whose health arc shrinks with the target's remaining health.
 - Shared green, orange, and red health states across the target ring and HUD.
 - Preset-first, seven-page configuration flow with transactional Save, Cancel, and Reset actions.
-- Optional Shoulder Surfing Reloaded 2.9.x integration with reversible lock centering.
+- Optional Shoulder Surfing Reloaded 2.9.x integration that keeps the shoulder camera during lock-on.
 - Accessibility controls for palette, opacity, compact HUD, soft indicators, and reduced motion.
 
 ## Requirements
@@ -45,7 +45,7 @@ Preset choices are previewed first. Choose **Save** to keep the preview, **Cance
 
 ## Compatibility
 
-Vanilla first and third person are the automatic fallback. Shoulder Surfing Reloaded 2.9.x is optional: Zelda Targeting temporarily centers SSR's runtime camera while locked so the target, crosshair, attack ray, and movement share one origin. The exact configured shoulder offset is restored on unlock and is never rewritten in SSR's configuration.
+Vanilla first and third person are the automatic fallback. Shoulder Surfing Reloaded 2.9.x is optional: Zelda Targeting keeps SSR's chosen shoulder side and camera offset while locked. With SSR's static crosshair, it aligns lock-on aim with the shifted attack ray; with SSR's dynamic crosshair, it uses the normal eye ray. Zelda Targeting does not change SSR's offsets or saved configuration. The Compatibility page can turn off shoulder-aware aim alignment.
 
 Better Third Person is not supported. It conflicts with Shoulder Surfing Reloaded's camera ownership model and should not be combined with it.
 

@@ -151,7 +151,7 @@ public class GuiTargetingConfig extends GuiScreen {
 
             case COMPATIBILITY:
                 y = this.addSection("Vanilla is active by default. Optional adapters stay safe when absent.", y);
-                y = this.addControl(ControlSpec.toggle("ssrCompensationEnabled", "Center SSR While Locked"), y);
+                y = this.addControl(ControlSpec.toggle("ssrCompensationEnabled", "Align Aim With Shoulder"), y);
                 return this.addControl(ControlSpec.toggle("debugCompatibility", "Compatibility Debug Output"), y);
 
             case ACCESSIBILITY:

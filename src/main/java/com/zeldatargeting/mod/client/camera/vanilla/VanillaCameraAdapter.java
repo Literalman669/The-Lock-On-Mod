@@ -3,6 +3,8 @@ package com.zeldatargeting.mod.client.camera.vanilla;
 import com.zeldatargeting.mod.ZeldaTargetingMod;
 import com.zeldatargeting.mod.client.camera.CameraRuntimeAdapter;
 import com.zeldatargeting.mod.client.camera.compat.CameraRotationPolicy;
+import com.zeldatargeting.mod.client.camera.compat.ShoulderAimSolver;
+import com.zeldatargeting.mod.client.camera.compat.ShoulderCameraState;
 import com.zeldatargeting.mod.client.camera.compat.ShoulderSurfingBridge;
 import com.zeldatargeting.mod.client.camera.CameraRuntimeState;
 import com.zeldatargeting.mod.client.camera.core.CameraCollisionResult;
@@ -75,9 +77,6 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
 
     @Override
     public CameraRuntimeState captureState() {
-        if (TargetingConfig.ssrCompensationEnabled) {
-            shoulderSurfing.beginCenteredLock();
-        }
         capturedState = new CameraRuntimeState(
             minecraft.gameSettings.thirdPersonView,
             minecraft.gameSettings.fovSetting
@@ -184,6 +183,15 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
         double targetDeltaX = focus.getX() - playerX;
         double targetDeltaY = focusY - playerY;
         double targetDeltaZ = focus.getZ() - playerZ;
+        if (TargetingConfig.ssrCompensationEnabled) {
+            ShoulderCameraState shoulder = shoulderSurfing.captureState();
+            ShoulderAimSolver.AimVector compensated = ShoulderAimSolver.compensate(
+                targetDeltaX, targetDeltaY, targetDeltaZ, shoulder
+            );
+            targetDeltaX = compensated.getX();
+            targetDeltaY = compensated.getY();
+            targetDeltaZ = compensated.getZ();
+        }
         return new CameraInput(
             player.rotationYaw,
             player.rotationPitch,
@@ -234,7 +242,6 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
 
     @Override
     public void restoreImmediate(PerspectiveDecision decision) {
-        shoulderSurfing.endCenteredLock();
         if (decision != null && decision.shouldApply()) {
             try {
                 minecraft.gameSettings.thirdPersonView = decision.getPerspective();
@@ -251,7 +258,6 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
 
     @Override
     public void clearFrame() {
-        shoulderSurfing.endCenteredLock();
         currentFrame = null;
         capturedState = null;
         transparency.reset();
@@ -384,7 +390,6 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
     private void handleApplicationFailure(String operation, RuntimeException failure) {
         warnApplicationOnce(operation, failure);
         applicationDisabled = true;
-        shoulderSurfing.endCenteredLock();
         try {
             if (capturedState != null) {
                 minecraft.gameSettings.thirdPersonView = capturedState.getPerspective();

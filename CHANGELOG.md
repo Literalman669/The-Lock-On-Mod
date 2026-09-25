@@ -7,7 +7,7 @@
 - Preset-first transactional configuration with seven focused pages.
 - Adaptive Hybrid HUD components, target-history support, and accessibility options.
 - A tubular glowing target ring with a remaining-health arc.
-- Optional Shoulder Surfing Reloaded 2.9.x integration with reversible runtime lock centering.
+- Optional Shoulder Surfing Reloaded 2.9.x integration that preserves its shoulder camera during lock-on.
 
 ### Changed
 
@@ -25,7 +25,7 @@
 - Target aim point now favors a practical hit location instead of aiming above short mobs.
 - Target-history capture is more consistent across target changes.
 - Configuration navigation, control layout, and button rendering work consistently across the seven pages.
-- Shoulder Surfing lock-on temporarily centers the runtime camera and restores the exact shoulder offset on unlock.
+- Shoulder Surfing lock-on aligns aim to SSR's active attack ray while preserving its shoulder side and offset.
 - Removed forced SSR adaptive-crosshair activation, which could displace the crosshair and return null hit results.
 - Removed the second WASD rotation that could reverse or mix movement around close targets.
 - Unlocked camera input no longer participates in a reconstructed compatibility yaw.

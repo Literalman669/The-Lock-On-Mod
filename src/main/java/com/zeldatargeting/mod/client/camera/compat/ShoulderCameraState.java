@@ -9,6 +9,7 @@ public final class ShoulderCameraState {
     private static final double MINIMUM_OFFSET_LENGTH_SQUARED = 1.0E-12D;
 
     private final boolean active;
+    private final boolean shoulderRay;
     private final double offsetX;
     private final double offsetY;
     private final double offsetZ;
@@ -16,11 +17,13 @@ public final class ShoulderCameraState {
 
     private ShoulderCameraState(
             boolean active,
+            boolean shoulderRay,
             double offsetX,
             double offsetY,
             double offsetZ,
             double cameraDistance) {
         this.active = active;
+        this.shoulderRay = shoulderRay;
         this.offsetX = offsetX;
         this.offsetY = offsetY;
         this.offsetZ = offsetZ;
@@ -28,7 +31,7 @@ public final class ShoulderCameraState {
     }
 
     public static ShoulderCameraState inactive() {
-        return new ShoulderCameraState(false, 0.0D, 0.0D, 0.0D, 0.0D);
+        return new ShoulderCameraState(false, false, 0.0D, 0.0D, 0.0D, 0.0D);
     }
 
     public static ShoulderCameraState active(
@@ -36,8 +39,18 @@ public final class ShoulderCameraState {
             double offsetY,
             double offsetZ,
             double cameraDistance) {
+        return active(offsetX, offsetY, offsetZ, cameraDistance, true);
+    }
+
+    public static ShoulderCameraState active(
+            double offsetX,
+            double offsetY,
+            double offsetZ,
+            double cameraDistance,
+            boolean shoulderRay) {
         return new ShoulderCameraState(
             true,
+            shoulderRay,
             offsetX,
             offsetY,
             offsetZ,
@@ -51,6 +64,7 @@ public final class ShoulderCameraState {
 
     public boolean canCompensate() {
         return active
+            && shoulderRay
             && isFinite(offsetX)
             && isFinite(offsetY)
             && isFinite(offsetZ)
