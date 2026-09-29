@@ -49,6 +49,10 @@ public class TargetingSettingsValidatorTest {
         assertEquals("threat", sanitized.targetPriority);
         assertEquals("center", sanitized.hudAnchor);
         assertEquals("zelda", sanitized.soundTheme);
+
+        TargetingSettings cinematic = new TargetingSettings();
+        cinematic.soundTheme = "Cinematic";
+        assertEquals("cinematic", TargetingSettingsValidator.sanitize(cinematic).soundTheme);
         assertEquals("arcade", sanitized.damageNumbersMotion);
     }
 

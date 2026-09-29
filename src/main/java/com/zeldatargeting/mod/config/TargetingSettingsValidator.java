@@ -47,7 +47,7 @@ public final class TargetingSettingsValidator {
         settings.lethalTargetPitch = clampFinite(settings.lethalTargetPitch, defaults.lethalTargetPitch, 0.5F, 2.0F);
         settings.targetLostPitch = clampFinite(settings.targetLostPitch, defaults.targetLostPitch, 0.5F, 2.0F);
         settings.soundTheme = select(settings.soundTheme, defaults.soundTheme,
-                "default", "zelda", "modern", "subtle");
+                "default", "zelda", "modern", "subtle", "cinematic");
 
         settings.damageNumbersScale = clampFinite(settings.damageNumbersScale, defaults.damageNumbersScale, 0.5F, 3.0F);
         settings.damageNumbersDuration = clamp(settings.damageNumbersDuration, 20, 200);

@@ -143,7 +143,7 @@ public class GuiTargetingConfig extends GuiScreen {
                 y = this.addSection("Main Audio", y);
                 y = this.addControl(ControlSpec.toggle("enableSounds", "Enable Sounds"), y);
                 y = this.addControl(ControlSpec.floatValue("soundVolume", "Master Sound Volume", 0.0F, 1.0F, 0.1F), y);
-                y = this.addControl(ControlSpec.choice("soundTheme", "Sound Theme", "default", "zelda", "modern", "subtle"), y);
+                y = this.addControl(ControlSpec.choice("soundTheme", "Sound Theme", "default", "zelda", "modern", "subtle", "cinematic"), y);
                 y = this.addControl(ControlSpec.toggle("enableSoundVariety", "Sound Variety"), y);
                 y = this.addSection("Events", y + 4);
                 y = this.addControl(ControlSpec.toggle("enableTargetLockSound", "Target Lock Sound"), y);
