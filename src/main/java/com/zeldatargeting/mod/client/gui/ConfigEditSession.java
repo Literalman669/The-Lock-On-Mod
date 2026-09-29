@@ -4,6 +4,8 @@ import com.zeldatargeting.mod.config.TargetingPreset;
 import com.zeldatargeting.mod.config.TargetingSettings;
 import com.zeldatargeting.mod.config.TargetingSettingsSession;
 
+import java.util.Collection;
+
 /**
  * GUI-level adapter around the pure settings session. It keeps the Minecraft
  * screen free to preview a working copy without confusing preview with Save.
@@ -26,6 +28,10 @@ public final class ConfigEditSession {
 
     public void reset(TargetingPreset preset) {
         session.reset(preset);
+    }
+
+    public void resetFields(TargetingPreset preset, Collection<String> fieldNames) {
+        session.resetFields(preset, fieldNames);
     }
 
     public TargetingSettings save() {

@@ -392,7 +392,19 @@ public class GuiTargetingConfig extends GuiScreen {
             return;
         }
         if (button.id == RESET_BUTTON) {
-            this.editSession.reset(TargetingPreset.fromId(this.editSession.workingCopy().lockOnPreset));
+            TargetingPreset preset = TargetingPreset.fromId(this.editSession.workingCopy().lockOnPreset);
+            if (this.pageNavigator.getCurrentConfigPage() == ConfigPage.PRESETS) {
+                this.editSession.reset(preset);
+            } else {
+                // Only this page's settings go back to the preset; other pages keep their edits.
+                List<String> pageFields = new ArrayList<String>();
+                for (ControlSpec spec : this.controlButtons.values()) {
+                    if (spec.fieldName != null) {
+                        pageFields.add(spec.fieldName);
+                    }
+                }
+                this.editSession.resetFields(preset, pageFields);
+            }
             TargetingConfig.previewSettings(this.editSession.preview());
             this.rebuildQueue.requestRebuild(true);
             return;
