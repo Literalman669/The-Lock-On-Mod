@@ -5,6 +5,11 @@ import com.zeldatargeting.mod.client.math.CameraMath;
 public final class CameraDirector {
     private static final float MAX_TRACKED_TARGET_DELTA = 30.0F;
     private static final float MAX_TRACKED_TARGET_LEAD = 45.0F;
+    // Below FULL, facing follows the target less and less; below HOLD it stays put.
+    // Near-vertical targets make yaw swing wildly for tiny moves (44 degrees for
+    // 4 cm at 5 cm apart), which spun the camera when standing over small mobs.
+    static final double YAW_HOLD_HORIZONTAL_DISTANCE = 0.15D;
+    static final double YAW_FULL_HORIZONTAL_DISTANCE = 0.75D;
 
     private boolean active;
     private boolean restoring;
@@ -225,7 +230,8 @@ public final class CameraDirector {
             input.getTargetDeltaY(),
             input.getTargetDeltaZ()
         );
-        float yawDifference = CameraMath.wrapDegrees(desired.getYaw() - input.getPlayerYaw());
+        float yawDifference = CameraMath.wrapDegrees(desired.getYaw() - input.getPlayerYaw())
+            * yawFollowWeight(input.getTargetDeltaX(), input.getTargetDeltaZ());
         float boundedYaw = input.getPlayerYaw() + clamp(
             yawDifference,
             -profile.getMaxYawAdjustment(),
@@ -242,6 +248,18 @@ public final class CameraDirector {
             90.0F
         );
         return new CameraMath.Rotation(boundedYaw, boundedPitch);
+    }
+
+    /** How strongly facing follows the target, from 0 (hold) to 1 (follow fully). */
+    static float yawFollowWeight(double deltaX, double deltaZ) {
+        double horizontal = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+        double t = clamp(
+            (horizontal - YAW_HOLD_HORIZONTAL_DISTANCE)
+                / (YAW_FULL_HORIZONTAL_DISTANCE - YAW_HOLD_HORIZONTAL_DISTANCE),
+            0.0D,
+            1.0D
+        );
+        return (float) (t * t * (3.0D - 2.0D * t));
     }
 
     private CameraMath.Rotation predictTargetRotation(

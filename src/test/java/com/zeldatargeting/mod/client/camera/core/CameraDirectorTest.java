@@ -104,6 +104,38 @@ public class CameraDirectorTest {
     }
 
     @Test
+    public void targetDirectlyBelowDoesNotSpinTheCamera() {
+        CameraDirector director = new CameraDirector();
+        director.begin(input(30.0F, 80.0F, 0.02D, -1.2D, 0.02D, 0L, false), CameraProfiles.SNAPPY);
+
+        // A small mob under the player jitters a few centimetres from side to side.
+        float yaw = 30.0F;
+        float pitch = 80.0F;
+        for (int frame = 0; frame < 40; frame++) {
+            double side = frame % 2 == 0 ? 0.03D : -0.03D;
+            CameraFrame result = director.update(
+                input(yaw, pitch, side, -1.2D, 0.02D, 16L, false),
+                CameraProfiles.SNAPPY
+            );
+            yaw = result.getYaw();
+            pitch = result.getPitch();
+        }
+
+        assertEquals(30.0F, yaw, 0.5F);
+        assertTrue("pitch still tracks the target below", pitch > 85.0F);
+    }
+
+    @Test
+    public void yawFollowWeightFadesOnlyForNearVerticalTargets() {
+        assertEquals(0.0F, CameraDirector.yawFollowWeight(0.0D, 0.0D), FLOAT_EPSILON);
+        assertEquals(0.0F, CameraDirector.yawFollowWeight(0.1D, 0.1D), FLOAT_EPSILON);
+        assertEquals(1.0F, CameraDirector.yawFollowWeight(0.0D, 0.75D), FLOAT_EPSILON);
+        assertEquals(1.0F, CameraDirector.yawFollowWeight(3.0D, 4.0D), FLOAT_EPSILON);
+        float middle = CameraDirector.yawFollowWeight(0.0D, 0.45D);
+        assertTrue(middle > 0.0F && middle < 1.0F);
+    }
+
+    @Test
     public void freeLookStopsRotationAndReleaseReseedsFromActualPlayerYaw() {
         CameraDirector director = new CameraDirector();
         director.begin(input(0.0F, 0.0F, 1.0D, 0.0D, 0.0D, 0L, false), CameraProfiles.BALANCED);
