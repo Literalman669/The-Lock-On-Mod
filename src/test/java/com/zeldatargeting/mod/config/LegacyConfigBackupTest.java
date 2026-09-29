@@ -30,6 +30,23 @@ public class LegacyConfigBackupTest {
     }
 
     @Test
+    public void repeatedBackupsOfTheSameFileReuseOneCopy() throws Exception {
+        File directory = Files.createTempDirectory("zeldatargeting-backup-repeat-test").toFile();
+        File legacy = new File(directory, "zeldatargeting.cfg");
+        Files.write(legacy.toPath(), "legacy-data".getBytes(StandardCharsets.UTF_8));
+        LegacyConfigBackup backup = new LegacyConfigBackup();
+
+        File first = backup.backup(legacy).getBackupFile();
+        File second = backup.backup(legacy).getBackupFile();
+        Files.write(legacy.toPath(), "edited-data".getBytes(StandardCharsets.UTF_8));
+        File third = backup.backup(legacy).getBackupFile();
+
+        assertEquals(first.getCanonicalFile(), second.getCanonicalFile());
+        assertEquals(new File(directory, "zeldatargeting-1.3-backup-2.cfg").getCanonicalFile(), third.getCanonicalFile());
+        assertEquals(3, directory.listFiles().length);
+    }
+
+    @Test
     public void backupReportsMissingSourceWithoutCreatingAnything() throws Exception {
         File directory = Files.createTempDirectory("zeldatargeting-backup-missing-test").toFile();
         LegacyConfigBackup.BackupResult result = new LegacyConfigBackup().backup(new File(directory, "zeldatargeting.cfg"));
