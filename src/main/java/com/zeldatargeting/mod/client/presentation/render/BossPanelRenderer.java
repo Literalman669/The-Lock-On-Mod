@@ -8,6 +8,7 @@ import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -36,18 +37,23 @@ public final class BossPanelRenderer {
                     snapshot.getMaxHealth(), BOSS_HP_THRESHOLD)) {
             return false;
         }
+        float scale = CrestPanelPainter.hudScale();
+        GlStateManager.pushMatrix();
         try {
-            renderPanel(snapshot, resolution);
+            GlStateManager.scale(scale, scale, 1.0F);
+            renderPanel(snapshot,
+                Math.round(resolution.getScaledWidth() / scale),
+                Math.round(resolution.getScaledHeight() / scale));
             return true;
         } catch (RuntimeException exception) {
             warn(exception);
             return false;
+        } finally {
+            GlStateManager.popMatrix();
         }
     }
 
-    private void renderPanel(TargetPresentationSnapshot snapshot, ScaledResolution resolution) {
-        int screenWidth = resolution.getScaledWidth();
-        int screenHeight = resolution.getScaledHeight();
+    private void renderPanel(TargetPresentationSnapshot snapshot, int screenWidth, int screenHeight) {
         int width = Math.min(screenWidth - HUD_MARGIN * 2,
             Math.min(BOSS_MAX_WIDTH,
                 Math.max(BOSS_MIN_WIDTH, Math.round(screenWidth * 0.72F))));

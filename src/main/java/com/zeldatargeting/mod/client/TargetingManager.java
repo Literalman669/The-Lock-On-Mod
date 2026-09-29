@@ -34,9 +34,11 @@ public final class TargetingManager {
     private static TargetingManager instance;
 
     private final VanillaCameraAdapter cameraAdapter;
+    private final EntityDetector entityDetector;
     private final CameraCoordinator<EntityLivingBase> cameraCoordinator;
     private final TargetingService<EntityLivingBase> targetingService;
     private final PresentationFeedbackController presentationFeedbackController;
+    private int ticksSinceValidation;
 
     private TargetingManager() {
         cameraAdapter = new VanillaCameraAdapter();
@@ -46,8 +48,9 @@ public final class TargetingManager {
             cameraAdapter,
             new LegacyCameraProfileAdapter()
         );
+        entityDetector = new EntityDetector();
         targetingService = new TargetingService<>(
-            new EntityDetector(),
+            entityDetector,
             new LockOnSession<EntityLivingBase>(),
             new TargetHistory(3)
         );
@@ -135,11 +138,17 @@ public final class TargetingManager {
             }
         }
 
+        LockReleaseReason filterReason = validateTarget(before);
+        if (filterReason != LockReleaseReason.NONE) {
+            releaseLockOn(filterReason);
+        }
+
+        LockOnSnapshot<EntityLivingBase> tickBefore = targetingService.snapshot();
         LockOnSnapshot<EntityLivingBase> after = targetingService.tick(
             nowMillis,
             currentOptions()
         );
-        handleTransition(before, after, false);
+        handleTransition(tickBefore, after, false);
         cameraCoordinator.onClientTick(
             after,
             KeyBindings.cameraFreeLook.isKeyDown(),
@@ -171,6 +180,9 @@ public final class TargetingManager {
     }
 
     private void acquireTarget() {
+        if (isRidingBlocked()) {
+            return;
+        }
         long nowMillis = System.currentTimeMillis();
         LockOnSnapshot<EntityLivingBase> before = targetingService.snapshot();
         LockOnSnapshot<EntityLivingBase> after = targetingService.acquire(
@@ -203,6 +215,35 @@ public final class TargetingManager {
         handleTransition(before, after, false);
     }
 
+    /**
+     * Drops the lock while riding (when enabled), and every validation interval
+     * re-checks that the target still passes the player's filters.
+     */
+    private LockReleaseReason validateTarget(LockOnSnapshot<EntityLivingBase> snapshot) {
+        if (!snapshot.isTracking()) {
+            ticksSinceValidation = 0;
+            return LockReleaseReason.NONE;
+        }
+        if (isRidingBlocked()) {
+            return LockReleaseReason.RIDING;
+        }
+        if (++ticksSinceValidation < TargetingConfig.validationInterval) {
+            return LockReleaseReason.NONE;
+        }
+        ticksSinceValidation = 0;
+        EntityLivingBase target = referencedTarget(snapshot);
+        return target != null && !entityDetector.isEligible(target)
+            ? LockReleaseReason.FILTERED
+            : LockReleaseReason.NONE;
+    }
+
+    private static boolean isRidingBlocked() {
+        Minecraft minecraft = Minecraft.getMinecraft();
+        return TargetingConfig.disableLockOnWhenRiding
+            && minecraft.player != null
+            && minecraft.player.isRiding();
+    }
+
     private TargetingOptions currentOptions() {
         return new TargetingOptions(
             TargetPriority.fromConfig(TargetingConfig.targetPriority),
@@ -211,7 +252,8 @@ public final class TargetingManager {
             750L,
             200L,
             250L,
-            false
+            false,
+            TargetingConfig.updateFrequency
         );
     }
 
@@ -284,6 +326,15 @@ public final class TargetingManager {
 
     public PresentationFeedbackController getPresentationFeedbackController() {
         return presentationFeedbackController;
+    }
+
+    /**
+     * Entity id of the locked target, still reported while the lock fades out
+     * (such as right after a kill), or -1 without a lock.
+     */
+    public int getFeedbackTargetId() {
+        TargetObservation<EntityLivingBase> target = targetingService.snapshot().getTarget();
+        return target == null ? -1 : target.getEntityId();
     }
 
     public Entity getCurrentTarget() {

@@ -45,6 +45,7 @@ public class LegacyConfigDefaultsTest {
         TargetingConfig.showReticle = false;
         TargetingConfig.bossStylePanel = false;
         TargetingConfig.targetPlayers = true;
+        TargetingConfig.entityBlacklist = "minecraft:zombie";
 
         TargetingConfig.resetToDefaults();
 
@@ -53,7 +54,7 @@ public class LegacyConfigDefaultsTest {
         assertTrue(TargetingConfig.showDistance);
         assertTrue(TargetingConfig.showTargetName);
         assertEquals(1.0F, TargetingConfig.reticleScale, FLOAT_EPSILON);
-        assertEquals(0xFF0000, TargetingConfig.reticleColor);
+        assertEquals(0xFFFFFF, TargetingConfig.reticleColor);
         assertFalse(TargetingConfig.compactHudMode);
         assertFalse(TargetingConfig.softAimIndicator);
         assertFalse(TargetingConfig.targetHistoryEnabled);
@@ -63,6 +64,9 @@ public class LegacyConfigDefaultsTest {
         assertTrue(TargetingConfig.targetNeutralMobs);
         assertTrue(TargetingConfig.targetPassiveMobs);
         assertFalse(TargetingConfig.targetPlayers);
+        assertEquals("", TargetingConfig.entityBlacklist);
+        assertTrue(TargetingConfig.disableLockOnWhenRiding);
+        assertFalse(TargetingConfig.syncTargetingRangeWithReach);
     }
 
     @Test

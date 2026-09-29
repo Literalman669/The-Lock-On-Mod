@@ -5,6 +5,8 @@ public final class NeonRingAppearance {
     private static final double MAX_CORE_HALF_THICKNESS = 0.16D;
     private static final double MIN_AURA_HALF_THICKNESS = 0.055D;
     private static final double MAX_AURA_HALF_THICKNESS = 0.22D;
+    private static final float MIN_THICKNESS_SCALE = 0.5F;
+    private static final float MAX_THICKNESS_SCALE = 2.5F;
 
     private final double auraHalfThickness;
     private final double coreHalfThickness;
@@ -17,9 +19,9 @@ public final class NeonRingAppearance {
             float auraAlphaMultiplier,
             float coreAlphaMultiplier) {
         this.auraHalfThickness = sanitizeThickness(auraHalfThickness,
-            MIN_AURA_HALF_THICKNESS, MAX_AURA_HALF_THICKNESS);
+            MIN_AURA_HALF_THICKNESS, MAX_AURA_HALF_THICKNESS * MAX_THICKNESS_SCALE);
         this.coreHalfThickness = sanitizeThickness(coreHalfThickness,
-            MIN_CORE_HALF_THICKNESS, MAX_CORE_HALF_THICKNESS);
+            MIN_CORE_HALF_THICKNESS, MAX_CORE_HALF_THICKNESS * MAX_THICKNESS_SCALE);
         this.auraAlphaMultiplier = clampAlpha(auraAlphaMultiplier);
         this.coreAlphaMultiplier = clampAlpha(coreAlphaMultiplier);
     }
@@ -34,12 +36,22 @@ public final class NeonRingAppearance {
      * the health arc never expand, shrink, or otherwise change with glow.
      */
     public static NeonRingAppearance from(RingGeometry geometry, float glowStrength) {
+        return from(geometry, glowStrength, 1.0F);
+    }
+
+    /**
+     * @param thicknessScale the player's Ring Thickness setting; scales the tube
+     *                       after the size-based limits so it always has an effect
+     */
+    public static NeonRingAppearance from(RingGeometry geometry, float glowStrength, float thicknessScale) {
         double radius = geometry == null ? 0.5D : geometry.getHalfWidth();
         double core = clamp(radius * 0.09D, MIN_CORE_HALF_THICKNESS, MAX_CORE_HALF_THICKNESS);
+        double aura = clamp(core * 1.35D, MIN_AURA_HALF_THICKNESS, MAX_AURA_HALF_THICKNESS);
         float glow = clampGlowStrength(glowStrength);
+        float thickness = clampThicknessScale(thicknessScale);
         return new NeonRingAppearance(
-            clamp(core * 1.35D, MIN_AURA_HALF_THICKNESS, MAX_AURA_HALF_THICKNESS),
-            core,
+            aura * thickness,
+            core * thickness,
             0.22F * glow,
             0.86F + 0.12F * glow
         );
@@ -74,6 +86,11 @@ public final class NeonRingAppearance {
     private static float clampAlpha(float value) {
         float safeValue = Float.isFinite(value) ? value : 0.0F;
         return Math.max(0.0F, Math.min(1.0F, safeValue));
+    }
+
+    private static float clampThicknessScale(float value) {
+        float safeValue = Float.isFinite(value) ? value : 1.0F;
+        return Math.max(MIN_THICKNESS_SCALE, Math.min(MAX_THICKNESS_SCALE, safeValue));
     }
 
     private static float clampGlowStrength(float value) {

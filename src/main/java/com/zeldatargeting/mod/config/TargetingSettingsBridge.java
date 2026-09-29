@@ -17,6 +17,8 @@ public final class TargetingSettingsBridge {
         settings.maxAngle = TargetingConfig.maxAngle;
         settings.requireLineOfSight = TargetingConfig.requireLineOfSight;
         settings.targetPriority = TargetingConfig.targetPriority;
+        settings.syncTargetingRangeWithReach = TargetingConfig.syncTargetingRangeWithReach;
+        settings.disableLockOnWhenRiding = TargetingConfig.disableLockOnWhenRiding;
 
         settings.showReticle = TargetingConfig.showReticle;
         settings.showHealthBar = TargetingConfig.showHealthBar;
@@ -47,6 +49,7 @@ public final class TargetingSettingsBridge {
         settings.targetNeutralMobs = TargetingConfig.targetNeutralMobs;
         settings.targetPassiveMobs = TargetingConfig.targetPassiveMobs;
         settings.targetPlayers = TargetingConfig.targetPlayers;
+        settings.entityBlacklist = TargetingConfig.entityBlacklist;
 
         settings.enableSounds = TargetingConfig.enableSounds;
         settings.soundVolume = TargetingConfig.soundVolume;
@@ -107,6 +110,8 @@ public final class TargetingSettingsBridge {
         TargetingConfig.maxAngle = settings.maxAngle;
         TargetingConfig.requireLineOfSight = settings.requireLineOfSight;
         TargetingConfig.targetPriority = settings.targetPriority;
+        TargetingConfig.syncTargetingRangeWithReach = settings.syncTargetingRangeWithReach;
+        TargetingConfig.disableLockOnWhenRiding = settings.disableLockOnWhenRiding;
 
         TargetingConfig.showReticle = settings.showReticle;
         TargetingConfig.showHealthBar = settings.showHealthBar;
@@ -137,6 +142,7 @@ public final class TargetingSettingsBridge {
         TargetingConfig.targetNeutralMobs = settings.targetNeutralMobs;
         TargetingConfig.targetPassiveMobs = settings.targetPassiveMobs;
         TargetingConfig.targetPlayers = settings.targetPlayers;
+        TargetingConfig.entityBlacklist = settings.entityBlacklist;
 
         TargetingConfig.enableSounds = settings.enableSounds;
         TargetingConfig.soundVolume = settings.soundVolume;

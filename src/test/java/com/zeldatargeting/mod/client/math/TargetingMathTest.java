@@ -42,4 +42,13 @@ public class TargetingMathTest {
         assertEquals(0, TargetingMath.adjacentIndex(-1, 3, true));
         assertEquals(2, TargetingMath.adjacentIndex(-1, 3, false));
     }
+
+    @Test
+    public void meleeReachMatchesVanillaAndAddsModdedBonus() {
+        assertEquals(3.0D, TargetingMath.meleeReach(false, 0.0D), EPSILON);
+        assertEquals(6.0D, TargetingMath.meleeReach(true, 0.0D), EPSILON);
+        assertEquals(5.0D, TargetingMath.meleeReach(false, 2.0D), EPSILON);
+        assertEquals(3.0D, TargetingMath.meleeReach(false, -1.0D), EPSILON);
+        assertEquals(3.0D, TargetingMath.meleeReach(false, Double.NaN), EPSILON);
+    }
 }

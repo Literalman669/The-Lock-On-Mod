@@ -44,4 +44,18 @@ public class NeonRingAppearanceTest {
         assertTrue(bright.getCoreAlphaMultiplier() > dim.getCoreAlphaMultiplier());
     }
 
+    @Test
+    public void thicknessScalesBothBandsAndIsClamped() {
+        RingGeometry geometry = RingGeometry.create(1.0D, 2.0D, 4.0D, 1.0F, false);
+        NeonRingAppearance normal = NeonRingAppearance.from(geometry, 1.0F, 1.0F);
+        NeonRingAppearance thick = NeonRingAppearance.from(geometry, 1.0F, 2.0F);
+        NeonRingAppearance tooThick = NeonRingAppearance.from(geometry, 1.0F, 99.0F);
+        NeonRingAppearance invalid = NeonRingAppearance.from(geometry, 1.0F, Float.NaN);
+
+        assertEquals(normal.getCoreHalfThickness() * 2.0D, thick.getCoreHalfThickness(), 1.0E-9D);
+        assertEquals(normal.getAuraHalfThickness() * 2.0D, thick.getAuraHalfThickness(), 1.0E-9D);
+        assertEquals(normal.getCoreHalfThickness() * 2.5D, tooThick.getCoreHalfThickness(), 1.0E-9D);
+        assertEquals(normal.getCoreHalfThickness(), invalid.getCoreHalfThickness(), 0.0D);
+        assertEquals(normal.getCoreHalfThickness(), NeonRingAppearance.from(geometry, 1.0F).getCoreHalfThickness(), 0.0D);
+    }
 }

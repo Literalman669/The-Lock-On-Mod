@@ -27,6 +27,16 @@ public final class TargetingMath {
         return Math.toDegrees(Math.acos(clampedDot));
     }
 
+    /**
+     * Melee reach used when the targeting range follows the player's reach:
+     * Minecraft 1.12.2 allows entity hits within 3 blocks in survival and 6 in
+     * creative. {@code bonusReach} is extra reach granted by other mods.
+     */
+    public static double meleeReach(boolean creative, double bonusReach) {
+        double bonus = Double.isFinite(bonusReach) ? Math.max(0.0D, bonusReach) : 0.0D;
+        return (creative ? 6.0D : 3.0D) + bonus;
+    }
+
     public static int adjacentIndex(int currentIndex, int count, boolean forward) {
         if (count <= 0) {
             return -1;

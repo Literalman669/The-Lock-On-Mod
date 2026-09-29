@@ -50,6 +50,7 @@ public class GuiTargetingConfig extends GuiScreen {
     private int contentNaturalBottom;
     private int contentScroll;
     private boolean settled;
+    private boolean openingChildScreen;
 
     public GuiTargetingConfig(GuiScreen parentScreen) {
         this.parentScreen = parentScreen;
@@ -90,15 +91,23 @@ public class GuiTargetingConfig extends GuiScreen {
             case TARGETING:
                 y = this.addSection("Acquisition", y);
                 y = this.addControl(ControlSpec.doubleValue("targetingRange", "Targeting Range", 1.0D, 64.0D, 1.0D), y);
+                y = this.addControl(ControlSpec.toggle("syncTargetingRangeWithReach", "Match Range to Reach"), y);
                 y = this.addControl(ControlSpec.doubleValue("maxTrackingDistance", "Max Tracking Distance", 1.0D, 128.0D, 1.0D), y);
                 y = this.addControl(ControlSpec.doubleValue("maxAngle", "Detection Angle", 15.0D, 180.0D, 5.0D), y);
                 y = this.addControl(ControlSpec.toggle("requireLineOfSight", "Require Line of Sight"), y);
                 y = this.addControl(ControlSpec.choice("targetPriority", "Target Priority", "nearest", "angle", "health", "threat"), y);
+                y = this.addControl(ControlSpec.toggle("disableLockOnWhenRiding", "Disable While Riding"), y);
                 y = this.addSection("Eligible Targets", y + 4);
                 y = this.addControl(ControlSpec.toggle("targetHostileMobs", "Target Hostile Mobs"), y);
                 y = this.addControl(ControlSpec.toggle("targetNeutralMobs", "Target Neutral Mobs"), y);
                 y = this.addControl(ControlSpec.toggle("targetPassiveMobs", "Target Passive Mobs"), y);
-                return this.addControl(ControlSpec.toggle("targetPlayers", "Target Players"), y);
+                y = this.addControl(ControlSpec.toggle("targetPlayers", "Target Players"), y);
+                y = this.addControl(ControlSpec.text("entityBlacklist", "Entity Blacklist",
+                        "Entities that are never targeted, separated by commas.",
+                        "minecraft:iron_golem = one mob, iceandfire: = a whole mod, golem = any name containing it"), y);
+                y = this.addSection("Update Rate (higher saves work, reacts slower)", y + 4);
+                y = this.addControl(ControlSpec.integerValue("updateFrequency", "Target Check Interval (ticks)", 1, 20, 1), y);
+                return this.addControl(ControlSpec.integerValue("validationInterval", "Filter Check Interval (ticks)", 5, 60, 5), y);
 
             case CAMERA:
                 y = this.addSection("Lock-on Camera", y);
@@ -117,6 +126,7 @@ public class GuiTargetingConfig extends GuiScreen {
                 y = this.addControl(ControlSpec.toggle("showDistance", "Show Distance"), y);
                 y = this.addControl(ControlSpec.toggle("showTargetName", "Show Target Name"), y);
                 y = this.addControl(ControlSpec.floatValue("reticleScale", "Reticle Scale", 0.5F, 3.0F, 0.1F), y);
+                y = this.addControl(ControlSpec.color("reticleColor", "Reticle Color"), y);
                 y = this.addSection("Panel Position", y + 4);
                 y = this.addControl(ControlSpec.choice("hudAnchor", "HUD Anchor", "top-left", "top-right", "bottom-left", "bottom-right", "center"), y);
                 y = this.addControl(ControlSpec.integerValue("hudOffsetX", "HUD Offset X", -500, 500, 5), y);
@@ -231,6 +241,10 @@ public class GuiTargetingConfig extends GuiScreen {
     }
 
     private void changeControl(ControlSpec spec, boolean reverse) {
+        if (spec.kind == ControlKind.TEXT) {
+            this.openTextEditor(spec);
+            return;
+        }
         if (spec.kind == ControlKind.PRESET) {
             this.editSession.reset(spec.preset);
         } else {
@@ -253,6 +267,9 @@ public class GuiTargetingConfig extends GuiScreen {
                     case CHOICE:
                         field.set(working, this.cycleChoice((String) field.get(working), spec, reverse));
                         break;
+                    case COLOR:
+                        field.setInt(working, ReticleColor.cycle(field.getInt(working), reverse).getRgb());
+                        break;
                     default:
                         break;
                 }
@@ -263,6 +280,33 @@ public class GuiTargetingConfig extends GuiScreen {
 
         TargetingConfig.previewSettings(this.editSession.preview());
         this.rebuildQueue.requestRebuild(false);
+    }
+
+    private void openTextEditor(final ControlSpec spec) {
+        final Field field;
+        try {
+            field = TargetingSettings.class.getField(spec.fieldName);
+        } catch (ReflectiveOperationException ignored) {
+            return;
+        }
+        String current;
+        try {
+            current = (String) field.get(this.editSession.workingCopy());
+        } catch (ReflectiveOperationException ignored) {
+            return;
+        }
+        GuiTextSettingEdit editor = new GuiTextSettingEdit(this, spec.label, spec.choices, current, value -> {
+            try {
+                field.set(this.editSession.workingCopy(), value);
+            } catch (ReflectiveOperationException ignored) {
+                return;
+            }
+            TargetingConfig.previewSettings(this.editSession.preview());
+        });
+        // The edit stays inside this screen's Save/Cancel session, so leaving for the
+        // editor must not cancel it.
+        this.openingChildScreen = true;
+        this.mc.displayGuiScreen(editor);
     }
 
     private double cycleDouble(double current, ControlSpec spec, boolean reverse) {
@@ -306,10 +350,26 @@ public class GuiTargetingConfig extends GuiScreen {
             if (spec.kind == ControlKind.INTEGER) {
                 return spec.label + ": " + value;
             }
+            if (spec.kind == ControlKind.COLOR) {
+                return spec.label + ": " + ReticleColor.describe((Integer) value);
+            }
+            if (spec.kind == ControlKind.TEXT) {
+                String text = String.valueOf(value);
+                return spec.label + ": " + (text.isEmpty() ? "§7none" : this.summarize(text, spec.label));
+            }
             return spec.label + ": " + this.formatNumber(((Number) value).doubleValue());
         } catch (ReflectiveOperationException ignored) {
             return spec.label;
         }
+    }
+
+    private String summarize(String text, String label) {
+        int buttonWidth = Math.min(420, Math.max(150, this.width - 48));
+        int available = buttonWidth - 16 - this.fontRenderer.getStringWidth(label + ": ");
+        if (this.fontRenderer.getStringWidth(text) <= available) {
+            return text;
+        }
+        return this.fontRenderer.trimStringToWidth(text, Math.max(0, available - this.fontRenderer.getStringWidth("..."))) + "...";
     }
 
     private String formatNumber(double value) {
@@ -410,6 +470,10 @@ public class GuiTargetingConfig extends GuiScreen {
 
     @Override
     public void onGuiClosed() {
+        if (this.openingChildScreen) {
+            this.openingChildScreen = false;
+            return;
+        }
         if (!this.settled) {
             this.settled = true;
             TargetingConfig.restoreSettings(this.editSession.cancel());
@@ -443,6 +507,8 @@ public class GuiTargetingConfig extends GuiScreen {
         FLOAT,
         INTEGER,
         CHOICE,
+        COLOR,
+        TEXT,
         PRESET
     }
 
@@ -486,6 +552,15 @@ public class GuiTargetingConfig extends GuiScreen {
 
         private static ControlSpec choice(String fieldName, String label, String... choices) {
             return new ControlSpec(ControlKind.CHOICE, fieldName, label, 0.0D, 0.0D, 0.0D, choices, null);
+        }
+
+        private static ControlSpec color(String fieldName, String label) {
+            return new ControlSpec(ControlKind.COLOR, fieldName, label, 0.0D, 0.0D, 0.0D, new String[0], null);
+        }
+
+        /** Free text edited on its own screen; {@code hints} are shown above the text box. */
+        private static ControlSpec text(String fieldName, String label, String... hints) {
+            return new ControlSpec(ControlKind.TEXT, fieldName, label, 0.0D, 0.0D, 0.0D, hints, null);
         }
 
         private static ControlSpec preset(TargetingPreset preset) {

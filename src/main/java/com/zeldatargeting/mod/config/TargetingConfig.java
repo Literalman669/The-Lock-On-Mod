@@ -26,6 +26,8 @@ public final class TargetingConfig {
     public static double maxAngle = 60.0;
     public static boolean requireLineOfSight = true;
     public static String targetPriority = "nearest";
+    public static boolean syncTargetingRangeWithReach = false;
+    public static boolean disableLockOnWhenRiding = true;
 
     // HUD and visual settings
     public static boolean showReticle = true;
@@ -33,7 +35,7 @@ public final class TargetingConfig {
     public static boolean showDistance = true;
     public static boolean showTargetName = true;
     public static float reticleScale = 1.0f;
-    public static int reticleColor = 0xFF0000;
+    public static int reticleColor = 0xFFFFFF;
     public static boolean compactHudMode = false;
     public static boolean softAimIndicator = false;
     public static boolean targetHistoryEnabled = false;
@@ -59,6 +61,7 @@ public final class TargetingConfig {
     public static boolean targetNeutralMobs = true;
     public static boolean targetPassiveMobs = true;
     public static boolean targetPlayers = false;
+    public static String entityBlacklist = "";
 
     // Audio settings
     public static boolean enableSounds = true;

@@ -63,6 +63,8 @@ public final class TargetingSettingsStore {
         write(configuration, "targeting", "maxAngle", settings.maxAngle);
         write(configuration, "targeting", "requireLineOfSight", settings.requireLineOfSight);
         write(configuration, "targeting", "targetPriority", settings.targetPriority);
+        write(configuration, "targeting", "syncTargetingRangeWithReach", settings.syncTargetingRangeWithReach);
+        write(configuration, "targeting", "disableLockOnWhenRiding", settings.disableLockOnWhenRiding);
 
         write(configuration, "camera", "enableCameraLockOn", settings.enableCameraLockOn);
         write(configuration, "camera", "cameraSmoothness", settings.cameraSmoothness);
@@ -77,7 +79,7 @@ public final class TargetingSettingsStore {
         write(configuration, "hud", "showDistance", settings.showDistance);
         write(configuration, "hud", "showTargetName", settings.showTargetName);
         write(configuration, "hud", "reticleScale", settings.reticleScale);
-        write(configuration, "hud", "reticleColor", settings.reticleColor);
+        write(configuration, "hud", "reticleBracketColor", settings.reticleColor);
         write(configuration, "hud", "compactHudMode", settings.compactHudMode);
         write(configuration, "hud", "softAimIndicator", settings.softAimIndicator);
         write(configuration, "hud", "targetHistoryEnabled", settings.targetHistoryEnabled);
@@ -112,6 +114,7 @@ public final class TargetingSettingsStore {
         write(configuration, "entities", "targetNeutralMobs", settings.targetNeutralMobs);
         write(configuration, "entities", "targetPassiveMobs", settings.targetPassiveMobs);
         write(configuration, "entities", "targetPlayers", settings.targetPlayers);
+        write(configuration, "entities", "entityBlacklist", settings.entityBlacklist);
 
         write(configuration, "damageNumbers", "enableDamageNumbers", settings.enableDamageNumbers);
         write(configuration, "damageNumbers", "damageNumbersScale", settings.damageNumbersScale);
@@ -134,6 +137,8 @@ public final class TargetingSettingsStore {
         configuration.remove("compatibility.btpCompatibilityMode");
         configuration.remove("compatibility.btpCameraIntensity");
         configuration.remove("compatibility.ssrXOffset");
+        // Held a never-used default before reticleBracketColor; dropping it keeps brackets white.
+        configuration.remove("hud.reticleColor");
         write(configuration, "compatibility", "ssrCompensationEnabled", settings.ssrCompensationEnabled);
         write(configuration, "compatibility", "debugCompatibility", settings.debugCompatibility);
 
@@ -164,6 +169,8 @@ public final class TargetingSettingsStore {
         settings.maxAngle = readDouble(configuration, "targeting", "maxAngle", defaults.maxAngle);
         settings.requireLineOfSight = readBoolean(configuration, "targeting", "requireLineOfSight", defaults.requireLineOfSight);
         settings.targetPriority = readString(configuration, "targeting", "targetPriority", defaults.targetPriority);
+        settings.syncTargetingRangeWithReach = readBoolean(configuration, "targeting", "syncTargetingRangeWithReach", defaults.syncTargetingRangeWithReach);
+        settings.disableLockOnWhenRiding = readBoolean(configuration, "targeting", "disableLockOnWhenRiding", defaults.disableLockOnWhenRiding);
 
         settings.enableCameraLockOn = readBoolean(configuration, "camera", "enableCameraLockOn", defaults.enableCameraLockOn);
         settings.cameraSmoothness = readFloat(configuration, "camera", "cameraSmoothness", defaults.cameraSmoothness);
@@ -178,7 +185,7 @@ public final class TargetingSettingsStore {
         settings.showDistance = readBoolean(configuration, "hud", "showDistance", defaults.showDistance);
         settings.showTargetName = readBoolean(configuration, "hud", "showTargetName", defaults.showTargetName);
         settings.reticleScale = readFloat(configuration, "hud", "reticleScale", defaults.reticleScale);
-        settings.reticleColor = readInt(configuration, "hud", "reticleColor", defaults.reticleColor);
+        settings.reticleColor = readInt(configuration, "hud", "reticleBracketColor", defaults.reticleColor);
         settings.compactHudMode = readBoolean(configuration, "hud", "compactHudMode", defaults.compactHudMode);
         settings.softAimIndicator = readBoolean(configuration, "hud", "softAimIndicator", defaults.softAimIndicator);
         settings.targetHistoryEnabled = readBoolean(configuration, "hud", "targetHistoryEnabled", defaults.targetHistoryEnabled);
@@ -213,6 +220,7 @@ public final class TargetingSettingsStore {
         settings.targetNeutralMobs = readBoolean(configuration, "entities", "targetNeutralMobs", defaults.targetNeutralMobs);
         settings.targetPassiveMobs = readBoolean(configuration, "entities", "targetPassiveMobs", defaults.targetPassiveMobs);
         settings.targetPlayers = readBoolean(configuration, "entities", "targetPlayers", defaults.targetPlayers);
+        settings.entityBlacklist = readString(configuration, "entities", "entityBlacklist", defaults.entityBlacklist);
 
         settings.enableDamageNumbers = readBoolean(configuration, "damageNumbers", "enableDamageNumbers", defaults.enableDamageNumbers);
         settings.damageNumbersScale = readFloat(configuration, "damageNumbers", "damageNumbersScale", defaults.damageNumbersScale);

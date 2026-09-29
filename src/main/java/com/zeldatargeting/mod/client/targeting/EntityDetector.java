@@ -1,6 +1,7 @@
 package com.zeldatargeting.mod.client.targeting;
 
 import com.zeldatargeting.mod.client.math.TargetingMath;
+import com.zeldatargeting.mod.client.targeting.core.EntityBlacklist;
 import com.zeldatargeting.mod.client.targeting.core.TargetAnchor;
 import com.zeldatargeting.mod.client.targeting.core.TargetAnchorResolver;
 import com.zeldatargeting.mod.client.targeting.core.TargetCandidate;
@@ -9,6 +10,7 @@ import com.zeldatargeting.mod.client.targeting.core.TargetPoint;
 import com.zeldatargeting.mod.client.targeting.core.TargetProvider;
 import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
@@ -17,6 +19,7 @@ import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
@@ -31,9 +34,28 @@ public final class EntityDetector implements TargetProvider<EntityLivingBase> {
     };
 
     private final Minecraft mc;
+    private String blacklistSource = "";
+    private EntityBlacklist blacklist = EntityBlacklist.parse("");
 
     public EntityDetector() {
         mc = Minecraft.getMinecraft();
+    }
+
+    /**
+     * Whether the entity passes the player's target filters (type toggles,
+     * blacklist, invisibility). Range and line of sight are checked separately.
+     */
+    public boolean isEligible(EntityLivingBase entity) {
+        EntityPlayer player = mc.player;
+        return player != null
+            && entity != null
+            && entity != player
+            && entity.isEntityAlive()
+            && !isSpectatorPlayer(entity)
+            && !entity.isInvisibleToPlayer(player)
+            && !(entity instanceof EntityArmorStand)
+            && isTargetableEntityType(entity)
+            && !isBlacklisted(entity);
     }
 
     @Override
@@ -46,7 +68,7 @@ public final class EntityDetector implements TargetProvider<EntityLivingBase> {
             return;
         }
 
-        double range = TargetingConfig.getTargetingRange();
+        double range = targetingRange(player);
         AxisAlignedBB box = new AxisAlignedBB(
             player.posX - range,
             player.posY - range,
@@ -87,17 +109,12 @@ public final class EntityDetector implements TargetProvider<EntityLivingBase> {
             EntityPlayer player,
             EntityLivingBase entity,
             boolean acquisitionCone) {
-        if (entity == player
-                || !entity.isEntityAlive()
-                || isSpectatorPlayer(entity)
-                || entity.isInvisibleToPlayer(player)
-                || entity instanceof EntityArmorStand
-                || !isTargetableEntityType(entity)) {
+        if (!isEligible(entity)) {
             return null;
         }
 
         double distanceSquared = player.getDistanceSq(entity);
-        double range = TargetingConfig.getTargetingRange();
+        double range = targetingRange(player);
         if (distanceSquared > range * range) {
             return null;
         }
@@ -226,6 +243,31 @@ public final class EntityDetector implements TargetProvider<EntityLivingBase> {
         Vec3d end = new Vec3d(point.getX(), point.getY(), point.getZ());
         RayTraceResult result = player.world.rayTraceBlocks(start, end, false, true, false);
         return result == null || result.typeOfHit != RayTraceResult.Type.BLOCK;
+    }
+
+    private static double targetingRange(EntityPlayer player) {
+        if (!TargetingConfig.syncTargetingRangeWithReach) {
+            return TargetingConfig.getTargetingRange();
+        }
+        // Mods that extend reach raise Forge's reach attribute above its default.
+        IAttributeInstance reach = player.getEntityAttribute(EntityPlayer.REACH_DISTANCE);
+        double bonus = reach == null
+            ? 0.0D
+            : reach.getAttributeValue() - reach.getAttribute().getDefaultValue();
+        return TargetingMath.meleeReach(player.capabilities.isCreativeMode, bonus);
+    }
+
+    private boolean isBlacklisted(EntityLivingBase entity) {
+        String source = TargetingConfig.entityBlacklist == null ? "" : TargetingConfig.entityBlacklist;
+        if (!source.equals(blacklistSource)) {
+            blacklistSource = source;
+            blacklist = EntityBlacklist.parse(source);
+        }
+        if (blacklist.isEmpty()) {
+            return false;
+        }
+        ResourceLocation key = EntityList.getKey(entity);
+        return blacklist.matches(key == null ? null : key.toString(), entity.getClass().getName());
     }
 
     private static boolean isSpectatorPlayer(EntityLivingBase entity) {

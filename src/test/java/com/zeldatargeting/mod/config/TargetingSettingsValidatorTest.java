@@ -51,4 +51,25 @@ public class TargetingSettingsValidatorTest {
         assertEquals("zelda", sanitized.soundTheme);
         assertEquals("arcade", sanitized.damageNumbersMotion);
     }
+
+    @Test
+    public void sanitizeCleansTheEntityBlacklist() {
+        TargetingSettings missing = new TargetingSettings();
+        missing.entityBlacklist = null;
+        assertEquals("", TargetingSettingsValidator.sanitize(missing).entityBlacklist);
+
+        TargetingSettings messy = new TargetingSettings();
+        messy.entityBlacklist = "  minecraft:zombie,\nminecraft:creeper\t ";
+        assertEquals("minecraft:zombie, minecraft:creeper",
+            TargetingSettingsValidator.sanitize(messy).entityBlacklist);
+
+        TargetingSettings huge = new TargetingSettings();
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < 2000; i++) {
+            builder.append('a');
+        }
+        huge.entityBlacklist = builder.toString();
+        assertEquals(TargetingSettingsValidator.MAX_BLACKLIST_LENGTH,
+            TargetingSettingsValidator.sanitize(huge).entityBlacklist.length());
+    }
 }

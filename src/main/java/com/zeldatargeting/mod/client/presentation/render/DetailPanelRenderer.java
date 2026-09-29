@@ -11,6 +11,7 @@ import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -37,14 +38,22 @@ public final class DetailPanelRenderer {
         if (snapshot == null || resolution == null) {
             return;
         }
+        float scale = CrestPanelPainter.hudScale();
+        GlStateManager.pushMatrix();
         try {
-            renderPanel(snapshot, resolution);
+            GlStateManager.scale(scale, scale, 1.0F);
+            renderPanel(snapshot,
+                Math.round(resolution.getScaledWidth() / scale),
+                Math.round(resolution.getScaledHeight() / scale),
+                scale);
         } catch (RuntimeException exception) {
             warn(exception);
+        } finally {
+            GlStateManager.popMatrix();
         }
     }
 
-    private void renderPanel(TargetPresentationSnapshot snapshot, ScaledResolution resolution) {
+    private void renderPanel(TargetPresentationSnapshot snapshot, int screenWidth, int screenHeight, float scale) {
         PresentationStyle style = PresentationStyle.fromConfig();
         String title = TargetingConfig.showTargetName && !snapshot.getName().isEmpty()
             ? snapshot.getName() : "Target";
@@ -59,7 +68,9 @@ public final class DetailPanelRenderer {
         int wantedWidth = Math.max(MIN_WIDTH,
             PADDING * 2 + 11 + minecraft.fontRenderer.getStringWidth(title)
                 + (health ? minecraft.fontRenderer.getStringWidth(hp) + 10 : 0));
-        wantedWidth = Math.max(wantedWidth, PADDING * 2 + badgeWidth(badges));
+        float badgeScale = badgeScale();
+        int badgeRowHeight = Math.round(9 * badgeScale) + 2;
+        wantedWidth = Math.max(wantedWidth, PADDING * 2 + Math.round(badgeWidth(badges) * badgeScale));
         if (!condition.isEmpty()) {
             wantedWidth = Math.max(wantedWidth,
                 PADDING * 2 + minecraft.fontRenderer.getStringWidth(condition));
@@ -67,12 +78,13 @@ public final class DetailPanelRenderer {
         wantedWidth = Math.min(MAX_WIDTH, wantedWidth);
 
         int panelHeight = 8 + 14 + (health ? 11 : 0)
-            + (!badges.isEmpty() ? 11 : 0) + (!condition.isEmpty() ? 11 : 0) + 7;
+            + (!badges.isEmpty() ? badgeRowHeight : 0) + (!condition.isEmpty() ? 11 : 0) + 7;
+        // Offsets stay in screen pixels whatever the HUD scale.
         PanelLayout layout = PanelLayoutCalculator.calculate(
-            resolution.getScaledWidth(), resolution.getScaledHeight(),
+            screenWidth, screenHeight,
             wantedWidth, panelHeight,
             PanelAnchor.fromConfig(TargetingConfig.hudAnchor),
-            TargetingConfig.hudOffsetX, TargetingConfig.hudOffsetY, HUD_MARGIN
+            Math.round(TargetingConfig.hudOffsetX / scale), Math.round(TargetingConfig.hudOffsetY / scale), HUD_MARGIN
         );
         int x = layout.getX();
         int y = layout.getY();
@@ -106,8 +118,15 @@ public final class DetailPanelRenderer {
             nextY += 11;
         }
         if (!badges.isEmpty()) {
-            drawBadges(badges, x + PADDING, nextY, contentWidth, snapshot, style);
-            nextY += 11;
+            GlStateManager.pushMatrix();
+            try {
+                GlStateManager.translate(x + PADDING, nextY, 0.0F);
+                GlStateManager.scale(badgeScale, badgeScale, 1.0F);
+                drawBadges(badges, 0, 0, Math.round(contentWidth / badgeScale), snapshot, style);
+            } finally {
+                GlStateManager.popMatrix();
+            }
+            nextY += badgeRowHeight;
         }
         if (!condition.isEmpty()) {
             Gui.drawRect(x + PADDING, nextY - 1,
@@ -136,6 +155,12 @@ public final class DetailPanelRenderer {
                 : "HITS --");
         }
         return badges;
+    }
+
+    /** The Damage Prediction Scale setting, which sizes the distance/DMG/HITS row. */
+    private static float badgeScale() {
+        float scale = TargetingConfig.damagePredictionScale;
+        return Float.isFinite(scale) ? Math.max(0.5F, Math.min(2.0F, scale)) : 1.0F;
     }
 
     private int badgeWidth(List<String> badges) {

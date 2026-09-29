@@ -5,6 +5,8 @@ import com.zeldatargeting.mod.client.TargetingManager;
 import com.zeldatargeting.mod.client.presentation.TargetPresentationSnapshot;
 import com.zeldatargeting.mod.client.presentation.TargetPresentationSnapshotFactory;
 import com.zeldatargeting.mod.client.presentation.core.BossBarSuppressionPolicy;
+import com.zeldatargeting.mod.client.presentation.core.FeedbackEffects;
+import com.zeldatargeting.mod.client.presentation.core.PresentationFeedbackEvent;
 import com.zeldatargeting.mod.client.presentation.render.BossPanelRenderer;
 import com.zeldatargeting.mod.client.presentation.render.DetailPanelRenderer;
 import com.zeldatargeting.mod.client.presentation.render.SoftAimRenderer;
@@ -27,6 +29,7 @@ public final class TargetRenderer {
     private final BossPanelRenderer bossPanelRenderer;
     private final SoftAimRenderer softAimRenderer;
     private final TargetHistoryRenderer targetHistoryRenderer;
+    private final FeedbackEffects feedbackEffects = new FeedbackEffects();
     private boolean warned;
 
     public TargetRenderer() {
@@ -92,12 +95,23 @@ public final class TargetRenderer {
         if (manager == null) {
             return;
         }
+        long nowMillis = System.currentTimeMillis();
+        int events = manager.getPresentationFeedbackController().consumeVisualEvents();
+        if (events != PresentationFeedbackEvent.NONE) {
+            feedbackEffects.trigger(events, manager.getFeedbackTargetId(), nowMillis);
+            if ((events & PresentationFeedbackEvent.LETHAL) != 0) {
+                ringRenderer.captureBurst();
+            }
+        }
         if (manager.isActive()) {
             TargetPresentationSnapshot snapshot = snapshot(manager, event.getPartialTicks());
             if (snapshot != null && TargetingConfig.showReticle) {
-                ringRenderer.render(snapshot);
+                ringRenderer.render(snapshot, feedbackEffects, nowMillis);
                 ringRenderer.renderTargetMarker(snapshot);
             }
+        }
+        if (TargetingConfig.showReticle) {
+            ringRenderer.renderBurst(feedbackEffects, nowMillis);
         }
         if (TargetingConfig.targetHistoryEnabled) {
             targetHistoryRenderer.render(event.getPartialTicks());

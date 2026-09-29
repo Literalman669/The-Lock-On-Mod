@@ -43,6 +43,17 @@ The configuration is arranged as seven pages:
 
 Preset choices are previewed first. Choose **Save** to keep the preview, **Cancel** to discard it, or **Reset** to restore the current page's default settings.
 
+### Choosing targets
+
+- **Entity Blacklist** (Targeting page) lists entities that are never targeted, separated by commas. `minecraft:iron_golem` blocks one mob, `iceandfire:` blocks every mob from that mod, and a plain word such as `golem` blocks any mob whose name contains it.
+- **Disable While Riding** (on by default) blocks lock-on while you ride a horse, boat, or other mount, and releases an existing lock when you mount.
+- **Match Range to Reach** (off by default) replaces the targeting range with your melee reach: 3 blocks in survival, 6 in creative, plus any extra reach other mods grant.
+- **Target Check Interval** and **Filter Check Interval** set how often, in ticks, a lock re-checks line of sight and range, and whether the target still passes your filters. Higher values save work but react more slowly.
+
+### Target ring feedback
+
+While locked on, the ring reacts to the fight: it flashes and pops on your critical hits, sends out a warning-colored shockwave when the target drops to low health, and leaves a burst where the target dies. With **Reduced Motion** on, these become a brief color flash with no movement.
+
 ## Compatibility
 
 Vanilla first and third person are the automatic fallback. Shoulder Surfing Reloaded 2.9.x is optional: Zelda Targeting keeps SSR's chosen shoulder side and camera offset while locked. With SSR's static crosshair, it aligns lock-on aim with the shifted attack ray; with SSR's dynamic crosshair, it uses the normal eye ray. Zelda Targeting does not change SSR's offsets or saved configuration. The Compatibility page can turn off shoulder-aware aim alignment.

@@ -10,6 +10,7 @@ public final class TargetingOptions {
     private final long releaseFadeMillis;
     private final long cycleCooldownMillis;
     private final boolean quickSwitchEnabled;
+    private final int observationIntervalTicks;
 
     public TargetingOptions(
             TargetPriority priority,
@@ -19,6 +20,23 @@ public final class TargetingOptions {
             long releaseFadeMillis,
             long cycleCooldownMillis,
             boolean quickSwitchEnabled) {
+        this(priority, cameraProfileName, maxTrackingDistance, occlusionGraceMillis,
+            releaseFadeMillis, cycleCooldownMillis, quickSwitchEnabled, 1);
+    }
+
+    /**
+     * @param observationIntervalTicks ticks between checks of the locked target's
+     *                                 visibility and range; 1 checks every tick
+     */
+    public TargetingOptions(
+            TargetPriority priority,
+            String cameraProfileName,
+            double maxTrackingDistance,
+            long occlusionGraceMillis,
+            long releaseFadeMillis,
+            long cycleCooldownMillis,
+            boolean quickSwitchEnabled,
+            int observationIntervalTicks) {
         if (Double.isNaN(maxTrackingDistance) || maxTrackingDistance < 0.0D) {
             throw new IllegalArgumentException("maxTrackingDistance must be non-negative");
         }
@@ -38,6 +56,7 @@ public final class TargetingOptions {
         this.releaseFadeMillis = releaseFadeMillis;
         this.cycleCooldownMillis = cycleCooldownMillis;
         this.quickSwitchEnabled = quickSwitchEnabled;
+        this.observationIntervalTicks = Math.max(1, observationIntervalTicks);
     }
 
     public TargetPriority getPriority() {
@@ -66,6 +85,10 @@ public final class TargetingOptions {
 
     public boolean isQuickSwitchEnabled() {
         return quickSwitchEnabled;
+    }
+
+    public int getObservationIntervalTicks() {
+        return observationIntervalTicks;
     }
 
     private static String normalizeCameraProfileName(String value) {

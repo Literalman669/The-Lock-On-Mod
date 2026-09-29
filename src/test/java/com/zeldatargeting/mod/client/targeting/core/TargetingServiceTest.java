@@ -251,6 +251,40 @@ public class TargetingServiceTest {
     }
 
     @Test
+    public void observationIntervalSkipsChecksBetweenIntervalsButNotForNewTargets() {
+        FakeProvider provider = new FakeProvider();
+        TargetObservation<String> pig = observation("pig", 1, 8.0F, true, true, true, 4.0D, 20.0D, TargetAnchor.HEAD);
+        TargetObservation<String> cow = observation("cow", 2, 8.0F, true, true, true, 5.0D, 90.0D, TargetAnchor.HEAD);
+        provider.putObservation(pig);
+        provider.putObservation(cow);
+        provider.setCandidates(candidate(pig), candidate(cow));
+        TargetingService<String> service = lockedService(provider, new TargetHistory(4), pig);
+        TargetingOptions everyThirdTick = new TargetingOptions(
+            TargetPriority.NEAREST, "balanced", 20.0D, 750L, 200L, 250L, false, 3
+        );
+
+        for (int tick = 0; tick < 7; tick++) {
+            service.tick(100L + tick * 50L, everyThirdTick);
+        }
+        assertEquals(3, provider.observeCount);
+
+        service.cycle(true, 1000L, everyThirdTick);
+        service.tick(1050L, everyThirdTick);
+        service.tick(1100L, everyThirdTick);
+        assertEquals("cow", provider.lastObservedReference);
+        assertEquals(4, provider.observeCount);
+    }
+
+    @Test
+    public void optionsClampObservationIntervalToAtLeastOneTick() {
+        TargetingOptions options = new TargetingOptions(
+            TargetPriority.NEAREST, "balanced", 20.0D, 750L, 200L, 250L, false, 0
+        );
+        assertEquals(1, options.getObservationIntervalTicks());
+        assertEquals(1, options(TargetPriority.NEAREST, 20.0D, false).getObservationIntervalTicks());
+    }
+
+    @Test
     public void optionsRejectEveryNegativeLimit() {
         int rejected = 0;
         rejected += rejects(-1.0D, 750L, 200L, 250L) ? 1 : 0;

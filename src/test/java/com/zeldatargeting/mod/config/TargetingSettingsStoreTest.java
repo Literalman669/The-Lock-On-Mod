@@ -23,6 +23,10 @@ public class TargetingSettingsStoreTest {
         settings.soundTheme = "zelda";
         settings.presentationPalette = "tritanopia";
         settings.ringThickness = 1.75F;
+        settings.reticleColor = 0x55FFFF;
+        settings.entityBlacklist = "minecraft:iron_golem, iceandfire:";
+        settings.disableLockOnWhenRiding = false;
+        settings.syncTargetingRangeWithReach = true;
 
         store.save(settings);
         TargetingSettingsStore.LoadResult loaded = store.load();
@@ -36,6 +40,10 @@ public class TargetingSettingsStoreTest {
         assertEquals("zelda", loaded.getSettings().soundTheme);
         assertEquals("tritanopia", loaded.getSettings().presentationPalette);
         assertEquals(1.75F, loaded.getSettings().ringThickness, 0.0F);
+        assertEquals(0x55FFFF, loaded.getSettings().reticleColor);
+        assertEquals("minecraft:iron_golem, iceandfire:", loaded.getSettings().entityBlacklist);
+        assertFalse(loaded.getSettings().disableLockOnWhenRiding);
+        assertTrue(loaded.getSettings().syncTargetingRangeWithReach);
         assertTrue(fileContents.contains("schemaVersion=4"));
     }
 
@@ -67,7 +75,8 @@ public class TargetingSettingsStoreTest {
                 "meta.schemaVersion=4\n"
                         + "compatibility.btpCompatibilityMode=gentle\n"
                         + "compatibility.btpCameraIntensity=0.3\n"
-                        + "compatibility.ssrXOffset=-0.875\n")
+                        + "compatibility.ssrXOffset=-0.875\n"
+                        + "hud.reticleColor=16711680\n")
                 .getBytes(StandardCharsets.UTF_8));
 
         TargetingSettingsStore store = new TargetingSettingsStore(configFile);
@@ -80,6 +89,8 @@ public class TargetingSettingsStoreTest {
         assertFalse(contents.contains("btpCompatibilityMode"));
         assertFalse(contents.contains("btpCameraIntensity"));
         assertFalse(contents.contains("ssrXOffset"));
+        assertFalse(contents.contains("hud.reticleColor="));
+        assertTrue(contents.contains("hud.reticleBracketColor=16777215"));
         assertTrue(contents.contains("ssrCompensationEnabled"));
     }
 }

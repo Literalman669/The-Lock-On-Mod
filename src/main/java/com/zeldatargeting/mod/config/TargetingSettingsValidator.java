@@ -5,6 +5,8 @@ import java.util.Locale;
 /** Validates untrusted configuration data before it can reach the client runtime. */
 public final class TargetingSettingsValidator {
 
+    static final int MAX_BLACKLIST_LENGTH = 1024;
+
     private TargetingSettingsValidator() {
     }
 
@@ -19,6 +21,8 @@ public final class TargetingSettingsValidator {
         settings.maxAngle = clampFinite(settings.maxAngle, defaults.maxAngle, 15.0D, 180.0D);
         settings.targetPriority = select(settings.targetPriority, defaults.targetPriority,
                 "nearest", "angle", "health", "threat");
+
+        settings.entityBlacklist = sanitizeText(settings.entityBlacklist, MAX_BLACKLIST_LENGTH);
 
         settings.reticleScale = clampFinite(settings.reticleScale, defaults.reticleScale, 0.5F, 3.0F);
         settings.reticleColor = clampColor(settings.reticleColor, defaults.reticleColor);
@@ -96,6 +100,19 @@ public final class TargetingSettingsValidator {
 
     private static int clamp(int value, int minimum, int maximum) {
         return Math.max(minimum, Math.min(maximum, value));
+    }
+
+    /** Trims free text, drops line breaks and control characters, and caps its length. */
+    private static String sanitizeText(String value, int maxLength) {
+        if (value == null) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder(Math.min(value.length(), maxLength));
+        for (int i = 0; i < value.length() && builder.length() < maxLength; i++) {
+            char c = value.charAt(i);
+            builder.append(Character.isISOControl(c) ? ' ' : c);
+        }
+        return builder.toString().trim();
     }
 
     private static int clampColor(int value, int fallback) {

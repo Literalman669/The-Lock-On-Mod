@@ -4,6 +4,7 @@ import com.zeldatargeting.mod.client.KeyBindings;
 import com.zeldatargeting.mod.client.ConfigOnboardingClientHandler;
 import com.zeldatargeting.mod.client.TargetingManager;
 import com.zeldatargeting.mod.client.combat.DamageEventListener;
+import com.zeldatargeting.mod.client.combat.HitTracker;
 import com.zeldatargeting.mod.client.render.TargetRenderer;
 import com.zeldatargeting.mod.client.render.DamageNumbersRenderer;
 import net.minecraftforge.common.MinecraftForge;
@@ -30,7 +31,9 @@ public class ClientProxy extends CommonProxy {
         
         // Register renderers and event listeners
         MinecraftForge.EVENT_BUS.register(new TargetRenderer());
-        MinecraftForge.EVENT_BUS.register(new DamageNumbersRenderer());
+        DamageNumbersRenderer damageNumbers = new DamageNumbersRenderer();
+        MinecraftForge.EVENT_BUS.register(damageNumbers);
+        MinecraftForge.EVENT_BUS.register(new HitTracker(damageNumbers));
         MinecraftForge.EVENT_BUS.register(new DamageEventListener());
         MinecraftForge.EVENT_BUS.register(new ConfigOnboardingClientHandler());
     }

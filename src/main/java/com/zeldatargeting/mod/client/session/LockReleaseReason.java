@@ -13,5 +13,7 @@ public enum LockReleaseReason {
     OCCLUDED,
     DIMENSION_CHANGED,
     DISCONNECTED,
-    QUICK_SWITCH_FAILED
+    QUICK_SWITCH_FAILED,
+    FILTERED,
+    RIDING
 }

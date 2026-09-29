@@ -1,6 +1,7 @@
 package com.zeldatargeting.mod.client.presentation.render;
 
 import com.zeldatargeting.mod.client.presentation.core.PresentationStyle;
+import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.gui.Gui;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -20,6 +21,12 @@ final class CrestPanelPainter {
     private static final int BAR_TRACK = 0xFF2A3230;
 
     private CrestPanelPainter() {
+    }
+
+    /** The HUD Scale setting applied to the target plaque and boss banner. */
+    static float hudScale() {
+        float scale = TargetingConfig.hudScale;
+        return Float.isFinite(scale) ? Math.max(0.75F, Math.min(1.5F, scale)) : 1.0F;
     }
 
     static void frame(int x, int y, int width, int height,

@@ -2,6 +2,7 @@ package com.zeldatargeting.mod.client.presentation.render;
 
 import com.zeldatargeting.mod.ZeldaTargetingMod;
 import com.zeldatargeting.mod.client.presentation.TargetPresentationSnapshot;
+import com.zeldatargeting.mod.client.presentation.core.FeedbackEffects;
 import com.zeldatargeting.mod.client.presentation.core.PresentationStatus;
 import com.zeldatargeting.mod.client.presentation.core.NeonRingAppearance;
 import com.zeldatargeting.mod.client.presentation.core.PresentationStyle;
@@ -24,17 +25,67 @@ public final class TargetRingRenderer {
 
     private final Minecraft minecraft;
     private boolean warned;
+    // World-space ring from the latest frame, kept so a kill burst can play where the target died.
+    private boolean hasLastRing;
+    private double lastRingX;
+    private double lastRingY;
+    private double lastRingZ;
+    private double lastRingRadius;
+    private NeonRingAppearance lastRingAppearance;
+    private boolean hasBurst;
+    private double burstX;
+    private double burstY;
+    private double burstZ;
+    private double burstRadius;
+    private NeonRingAppearance burstAppearance;
 
     public TargetRingRenderer() {
         minecraft = Minecraft.getMinecraft();
     }
 
-    public void render(TargetPresentationSnapshot snapshot) {
+    public void render(TargetPresentationSnapshot snapshot, FeedbackEffects effects, long nowMillis) {
         if (snapshot == null) {
             return;
         }
         try {
-            renderRing(snapshot);
+            renderRing(snapshot, effects, nowMillis);
+        } catch (RuntimeException exception) {
+            warn(exception);
+        }
+    }
+
+    /** Pins the kill burst to where the ring was last drawn. */
+    public void captureBurst() {
+        hasBurst = hasLastRing;
+        burstX = lastRingX;
+        burstY = lastRingY;
+        burstZ = lastRingZ;
+        burstRadius = lastRingRadius;
+        burstAppearance = lastRingAppearance;
+    }
+
+    /** Draws the kill burst, which outlives the target and its lock. */
+    public void renderBurst(FeedbackEffects effects, long nowMillis) {
+        float progress = effects.progress(FeedbackEffects.Effect.LETHAL, nowMillis);
+        if (!hasBurst || progress == FeedbackEffects.INACTIVE || !TargetingConfig.ringEnabled) {
+            return;
+        }
+        try {
+            PresentationStyle style = PresentationStyle.fromConfig();
+            double grow = style.isReducedMotion() ? 1.0D : 1.0D + 1.2D * easeOut(progress);
+            double x = burstX - minecraft.getRenderManager().viewerPosX;
+            double y = burstY - minecraft.getRenderManager().viewerPosY;
+            double z = burstZ - minecraft.getRenderManager().viewerPosZ;
+            GlStateManager.pushMatrix();
+            try {
+                beginWorldOverlay();
+                drawNeonTorus(x, y, z, burstRadius * grow, burstAppearance,
+                    style.getStatusColor(PresentationStatus.LETHAL), 1.0F - progress,
+                    0.0D, 360.0D);
+            } finally {
+                endWorldOverlay();
+                GlStateManager.popMatrix();
+            }
         } catch (RuntimeException exception) {
             warn(exception);
         }
@@ -51,7 +102,7 @@ public final class TargetRingRenderer {
         }
     }
 
-    private void renderRing(TargetPresentationSnapshot snapshot) {
+    private void renderRing(TargetPresentationSnapshot snapshot, FeedbackEffects effects, long nowMillis) {
         PresentationStyle style = PresentationStyle.fromConfig();
         RingGeometry geometry = RingGeometry.create(
             snapshot.getWidth() * TargetingConfig.reticleScale,
@@ -60,9 +111,16 @@ public final class TargetRingRenderer {
             snapshot.getHealthRatio(),
             false
         );
-        NeonRingAppearance appearance = NeonRingAppearance.from(geometry, style.getRingGlowStrength());
+        NeonRingAppearance appearance = NeonRingAppearance.from(
+            geometry, style.getRingGlowStrength(), TargetingConfig.ringThickness);
         float pulse = style.isReducedMotion() ? 1.0F : 1.0F + (geometry.getMotionScale() - 1.0F)
-            * (float) Math.sin(System.currentTimeMillis() * 0.008D);
+            * (float) Math.sin(nowMillis * 0.008D);
+        // A critical hit flashes the ring toward white and, with motion allowed, pops it outward.
+        float critical = effects.progress(FeedbackEffects.Effect.CRITICAL, nowMillis);
+        float flash = critical == FeedbackEffects.INACTIVE ? 0.0F : 1.0F - easeOut(critical);
+        if (!style.isReducedMotion()) {
+            pulse *= 1.0F + 0.15F * flash;
+        }
         double halfWidth = geometry.getHalfWidth() * pulse;
         double halfHeight = geometry.getHalfHeight() * pulse;
         double x = snapshot.getInterpolatedX() - minecraft.getRenderManager().viewerPosX;
@@ -72,31 +130,68 @@ public final class TargetRingRenderer {
 
         GlStateManager.pushMatrix();
         try {
-            GlStateManager.disableTexture2D();
-            GlStateManager.disableDepth();
-            GlStateManager.enableBlend();
-            GlStateManager.blendFunc(
-                GlStateManager.SourceFactor.SRC_ALPHA,
-                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
-            );
+            beginWorldOverlay();
 
-        int ringColor = style.getStatusColor(snapshot.getStatus());
+            int ringColor = mixColor(style.getStatusColor(snapshot.getStatus()), 0xFFFFFFFF, 0.7F * flash);
             float alpha = geometry.getAlpha()
                 * (snapshot.getStatus() == PresentationStatus.OCCLUDED ? 0.45F : 1.0F);
-            drawNeonTorus(
-                x, y, z, halfWidth, appearance, ringColor, alpha,
-                -90.0D, geometry.getHealthArcDegrees()
-            );
-            color(0xFFFFFFFF, alpha);
+            if (TargetingConfig.ringEnabled) {
+                drawNeonTorus(
+                    x, y, z, halfWidth, appearance, ringColor, alpha,
+                    -90.0D, TargetingConfig.ringHealthArcEnabled ? geometry.getHealthArcDegrees() : 360.0D
+                );
+                drawLowHealthShockwave(x, y, z, halfWidth, appearance, alpha, style, effects, nowMillis);
+            }
+            color(0xFF000000 | TargetingConfig.reticleColor, alpha);
             drawCornerBrackets(x, y, z, halfWidth, halfHeight);
-        drawStatusMarker(x, y, z, halfWidth, snapshot.getStatus(), alpha, style);
+            drawStatusMarker(x, y, z, halfWidth, snapshot.getStatus(), alpha, style);
         } finally {
-            GlStateManager.enableDepth();
-            GlStateManager.enableTexture2D();
-            GlStateManager.disableBlend();
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            endWorldOverlay();
             GlStateManager.popMatrix();
         }
+
+        hasLastRing = true;
+        lastRingX = snapshot.getInterpolatedX();
+        lastRingY = snapshot.getInterpolatedY() + snapshot.getHeight() * 0.5D;
+        lastRingZ = snapshot.getInterpolatedZ();
+        lastRingRadius = halfWidth;
+        lastRingAppearance = appearance;
+    }
+
+    /** One ring in the warning color that expands and fades as the target drops to low health. */
+    private static void drawLowHealthShockwave(
+            double x, double y, double z, double radius, NeonRingAppearance appearance, float alpha,
+            PresentationStyle style, FeedbackEffects effects, long nowMillis) {
+        float progress = effects.progress(FeedbackEffects.Effect.LOW_HEALTH, nowMillis);
+        if (progress == FeedbackEffects.INACTIVE) {
+            return;
+        }
+        double grow = style.isReducedMotion() ? 1.0D : 1.0D + 0.8D * easeOut(progress);
+        drawNeonTorus(x, y, z, radius * grow, appearance,
+            style.getStatusColor(PresentationStatus.LOW_HEALTH), alpha * (1.0F - progress),
+            0.0D, 360.0D);
+    }
+
+    private static void beginWorldOverlay() {
+        GlStateManager.disableTexture2D();
+        GlStateManager.disableDepth();
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(
+            GlStateManager.SourceFactor.SRC_ALPHA,
+            GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
+        );
+    }
+
+    private static void endWorldOverlay() {
+        GlStateManager.enableDepth();
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableBlend();
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
+    private static float easeOut(float progress) {
+        float remaining = 1.0F - progress;
+        return 1.0F - remaining * remaining;
     }
 
     private void renderMarker(TargetPresentationSnapshot snapshot) {

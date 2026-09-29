@@ -2,8 +2,16 @@
 
 ## Unreleased
 
+### Added
+
+- Target ring effects: a flash on your critical hits, a shockwave when the target drops to low health, and a burst where it dies. Reduced Motion keeps only the color flash.
+- Entity blacklist, Disable While Riding, and Match Range to Reach, carried over from 1.3.1.
+- Reticle Color for the ring's corner brackets.
+
 ### Fixed
 
+- These settings now take effect: Enable Target Ring, Ring Thickness, Show Ring Health Arc, HUD Scale, Damage Prediction Scale, Target Check Interval (updateFrequency), and Filter Check Interval (validationInterval).
+- Critical hits and kills on the locked target are detected even when damage numbers are turned off.
 - Damage estimates now follow vanilla 1.12.2 math for attack charge, enchantment bonus, and critical hits.
 - Damage and hits-to-kill readouts now appear when locked onto players.
 - The real-hit damage cache is now thread-safe between the integrated server and the HUD.

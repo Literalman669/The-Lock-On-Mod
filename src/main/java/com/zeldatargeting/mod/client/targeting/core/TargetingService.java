@@ -13,6 +13,8 @@ public final class TargetingService<T> {
     private final TargetHistory history;
     private final ArrayList<TargetCandidate<T>> candidateBuffer = new ArrayList<>(16);
     private long lastCycleMillis = Long.MIN_VALUE;
+    private int observedEntityId = Integer.MIN_VALUE;
+    private int ticksUntilObservation;
 
     public TargetingService(
             TargetProvider<T> provider,
@@ -121,6 +123,15 @@ public final class TargetingService<T> {
             return current;
         }
 
+        // A new target is observed at once; after that only every N ticks.
+        int entityId = current.getTarget().getEntityId();
+        if (entityId == observedEntityId && ticksUntilObservation > 0) {
+            ticksUntilObservation--;
+            return current;
+        }
+        observedEntityId = entityId;
+        ticksUntilObservation = options.getObservationIntervalTicks() - 1;
+
         TargetObservation<T> observed = provider.observe(
             current.getTarget().getReference(),
             current.getTarget().getAnchor()
@@ -153,6 +164,7 @@ public final class TargetingService<T> {
         session.clear(reason, nowMillis);
         history.clear();
         lastCycleMillis = Long.MIN_VALUE;
+        observedEntityId = Integer.MIN_VALUE;
         return session.snapshot();
     }
 

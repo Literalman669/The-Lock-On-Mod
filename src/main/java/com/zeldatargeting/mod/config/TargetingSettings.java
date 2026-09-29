@@ -16,13 +16,15 @@ public class TargetingSettings {
     public double maxAngle = 60.0D;
     public boolean requireLineOfSight = true;
     public String targetPriority = "nearest";
+    public boolean syncTargetingRangeWithReach = false;
+    public boolean disableLockOnWhenRiding = true;
 
     public boolean showReticle = true;
     public boolean showHealthBar = true;
     public boolean showDistance = true;
     public boolean showTargetName = true;
     public float reticleScale = 1.0F;
-    public int reticleColor = 0xFF0000;
+    public int reticleColor = 0xFFFFFF;
     public boolean compactHudMode = false;
     public boolean softAimIndicator = false;
     public boolean targetHistoryEnabled = false;
@@ -46,6 +48,7 @@ public class TargetingSettings {
     public boolean targetNeutralMobs = true;
     public boolean targetPassiveMobs = true;
     public boolean targetPlayers = false;
+    public String entityBlacklist = "";
 
     public boolean enableSounds = true;
     public float soundVolume = 1.0F;
@@ -105,6 +108,8 @@ public class TargetingSettings {
         copy.maxAngle = maxAngle;
         copy.requireLineOfSight = requireLineOfSight;
         copy.targetPriority = targetPriority;
+        copy.syncTargetingRangeWithReach = syncTargetingRangeWithReach;
+        copy.disableLockOnWhenRiding = disableLockOnWhenRiding;
 
         copy.showReticle = showReticle;
         copy.showHealthBar = showHealthBar;
@@ -135,6 +140,7 @@ public class TargetingSettings {
         copy.targetNeutralMobs = targetNeutralMobs;
         copy.targetPassiveMobs = targetPassiveMobs;
         copy.targetPlayers = targetPlayers;
+        copy.entityBlacklist = entityBlacklist;
 
         copy.enableSounds = enableSounds;
         copy.soundVolume = soundVolume;
