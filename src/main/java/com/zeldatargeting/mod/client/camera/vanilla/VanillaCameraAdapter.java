@@ -189,7 +189,7 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
         double targetDeltaZ = focus.getZ() - playerZ;
         ShoulderCameraState shoulder = ShoulderCameraState.inactive();
         if (TargetingConfig.ssrCompensationEnabled) {
-            shoulder = shoulderSurfing.captureState();
+            shoulder = shoulderSurfing.captureState(partialTicks);
         }
         targetBodyYaw = shoulder.isActive() && !freeLook
             ? CameraMath.lookAt(

@@ -31,6 +31,10 @@ public final class ShoulderSurfingBridge {
     private final Method getOffsetX;
     private final Method getOffsetY;
     private final Method getOffsetZ;
+    // Previous-tick offsets; SSR draws and aims with values blended between them.
+    private final Method getOffsetXOld;
+    private final Method getOffsetYOld;
+    private final Method getOffsetZOld;
     private final Method getRendererInstance;
     private final Method getCameraDistance;
     private final Object clientConfig;
@@ -47,6 +51,9 @@ public final class ShoulderSurfingBridge {
             Method getOffsetX,
             Method getOffsetY,
             Method getOffsetZ,
+            Method getOffsetXOld,
+            Method getOffsetYOld,
+            Method getOffsetZOld,
             Method getRendererInstance,
             Method getCameraDistance,
             Object clientConfig,
@@ -59,6 +66,9 @@ public final class ShoulderSurfingBridge {
         this.getOffsetX = getOffsetX;
         this.getOffsetY = getOffsetY;
         this.getOffsetZ = getOffsetZ;
+        this.getOffsetXOld = getOffsetXOld;
+        this.getOffsetYOld = getOffsetYOld;
+        this.getOffsetZOld = getOffsetZOld;
         this.getRendererInstance = getRendererInstance;
         this.getCameraDistance = getCameraDistance;
         this.clientConfig = clientConfig;
@@ -68,8 +78,8 @@ public final class ShoulderSurfingBridge {
 
     public static ShoulderSurfingBridge unavailable() {
         return new ShoulderSurfingBridge(
-            null, false, null, null, null, null, null, null, null,
-            null, null, null
+            null, false, null, null, null, null, null, null, null, null,
+            null, null, null, null, null
         );
     }
 
@@ -96,6 +106,9 @@ public final class ShoulderSurfingBridge {
                 instanceType.getMethod("getOffsetX"),
                 instanceType.getMethod("getOffsetY"),
                 instanceType.getMethod("getOffsetZ"),
+                optionalMethod(instanceType, "getOffsetXOld"),
+                optionalMethod(instanceType, "getOffsetYOld"),
+                optionalMethod(instanceType, "getOffsetZOld"),
                 rendererType.getMethod("getInstance"),
                 rendererType.getMethod("getCameraDistance"),
                 clientConfig,
@@ -191,6 +204,15 @@ public final class ShoulderSurfingBridge {
     }
 
     public ShoulderCameraState captureState() {
+        return captureState(1.0F);
+    }
+
+    /**
+     * Reads SSR's camera offset blended to {@code partialTicks}, the same value SSR
+     * renders and ray-traces with, so aim correction does not trail SSR by a tick
+     * while its camera moves (centering, wall avoidance, sprinting, riding).
+     */
+    public ShoulderCameraState captureState(float partialTicks) {
         if (!operational) {
             return ShoulderCameraState.inactive();
         }
@@ -199,9 +221,9 @@ public final class ShoulderSurfingBridge {
             if (!Boolean.TRUE.equals(doShoulderSurfing.invoke(instance))) {
                 return ShoulderCameraState.inactive();
             }
-            double offsetX = ((Number) getOffsetX.invoke(instance)).doubleValue();
-            double offsetY = ((Number) getOffsetY.invoke(instance)).doubleValue();
-            double offsetZ = ((Number) getOffsetZ.invoke(instance)).doubleValue();
+            double offsetX = offset(instance, getOffsetX, getOffsetXOld, partialTicks);
+            double offsetY = offset(instance, getOffsetY, getOffsetYOld, partialTicks);
+            double offsetZ = offset(instance, getOffsetZ, getOffsetZOld, partialTicks);
             Object renderer = getRendererInstance.invoke(null);
             double cameraDistance = ((Number) getCameraDistance.invoke(renderer)).doubleValue();
             if (!isFinitePositive(cameraDistance)) {
@@ -223,6 +245,29 @@ public final class ShoulderSurfingBridge {
         } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
             disableAfterInvocationFailure(failure);
             return ShoulderCameraState.inactive();
+        }
+    }
+
+    private static double offset(Object instance, Method current, Method previous, float partialTicks)
+            throws ReflectiveOperationException {
+        double now = ((Number) current.invoke(instance)).doubleValue();
+        if (previous == null) {
+            return now;
+        }
+        double before = ((Number) previous.invoke(instance)).doubleValue();
+        return interpolate(before, now, partialTicks);
+    }
+
+    static double interpolate(double previous, double current, float partialTicks) {
+        float t = Float.isNaN(partialTicks) ? 1.0F : Math.max(0.0F, Math.min(1.0F, partialTicks));
+        return previous + (current - previous) * t;
+    }
+
+    private static Method optionalMethod(Class<?> type, String name) {
+        try {
+            return type.getMethod(name);
+        } catch (NoSuchMethodException missing) {
+            return null;
         }
     }
 
