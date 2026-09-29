@@ -34,13 +34,19 @@ public final class TargetingService<T> {
 
     public LockOnSnapshot<T> acquire(long nowMillis, TargetingOptions options) {
         requireOptions(options);
-        if (session.snapshot().getPhase() != LockPhase.IDLE) {
-            return session.snapshot();
+        LockOnSnapshot<T> current = session.snapshot();
+        if (current.getPhase() != LockPhase.IDLE && current.getPhase() != LockPhase.RELEASING) {
+            return current;
         }
 
         collectCandidates(true);
         TargetCandidate<T> winner = TargetScorer.selectBest(candidateBuffer, options.getPriority());
         if (winner != null) {
+            if (current.getPhase() == LockPhase.RELEASING) {
+                // A new lock cuts the previous lock's fade-out short instead of being ignored.
+                session.clear(current.getReleaseReason(), nowMillis);
+            }
+            observedEntityId = Integer.MIN_VALUE;
             session.beginAcquire(
                 winner.getObservation(),
                 options.getPriority(),

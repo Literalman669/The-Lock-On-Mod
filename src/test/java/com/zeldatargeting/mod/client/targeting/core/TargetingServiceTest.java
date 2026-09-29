@@ -276,6 +276,36 @@ public class TargetingServiceTest {
     }
 
     @Test
+    public void lockingDuringTheReleaseFadeStartsTheNewLockImmediately() {
+        FakeProvider provider = new FakeProvider();
+        TargetObservation<String> pig = observation("pig", 1, 8.0F, true, true, true, 4.0D, 20.0D, TargetAnchor.CENTER);
+        TargetObservation<String> cow = observation("cow", 2, 8.0F, true, true, true, 5.0D, 90.0D, TargetAnchor.CENTER);
+        TargetingService<String> service = lockedService(provider, new TargetHistory(4), pig);
+        TargetingOptions options = options(TargetPriority.NEAREST, 20.0D, false);
+        assertEquals(LockPhase.RELEASING, service.release(LockReleaseReason.MANUAL, 100L).getPhase());
+
+        provider.setCandidates(candidate(cow));
+        LockOnSnapshot<String> snapshot = service.acquire(150L, options);
+
+        assertEquals(LockPhase.ACQUIRING, snapshot.getPhase());
+        assertEquals("cow", snapshot.getTarget().getReference());
+    }
+
+    @Test
+    public void lockingDuringTheReleaseFadeWithNothingInRangeKeepsFading() {
+        FakeProvider provider = new FakeProvider();
+        TargetObservation<String> pig = observation("pig", 1, 8.0F, true, true, true, 4.0D, 20.0D, TargetAnchor.CENTER);
+        TargetingService<String> service = lockedService(provider, new TargetHistory(4), pig);
+        TargetingOptions options = options(TargetPriority.NEAREST, 20.0D, false);
+        service.release(LockReleaseReason.MANUAL, 100L);
+
+        LockOnSnapshot<String> snapshot = service.acquire(150L, options);
+
+        assertEquals(LockPhase.RELEASING, snapshot.getPhase());
+        assertEquals(LockReleaseReason.MANUAL, snapshot.getReleaseReason());
+    }
+
+    @Test
     public void optionsClampObservationIntervalToAtLeastOneTick() {
         TargetingOptions options = new TargetingOptions(
             TargetPriority.NEAREST, "balanced", 20.0D, 750L, 200L, 250L, false, 0
