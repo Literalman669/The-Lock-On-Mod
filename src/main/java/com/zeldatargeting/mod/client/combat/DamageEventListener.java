@@ -48,9 +48,11 @@ public class DamageEventListener {
         EntityLivingBase target = event.getEntityLiving();
         if (target == null) return;
 
-        // Only cache damage dealt by the local player
-        Entity trueSource = event.getSource().getTrueSource();
-        if (trueSource == null || !trueSource.getUniqueID().equals(mc.player.getUniqueID())) return;
+        // Only cache the local player's own melee hits. For arrows and other projectiles
+        // the immediate source is the projectile, and their damage would otherwise show
+        // as the player's melee damage.
+        Entity immediateSource = event.getSource().getImmediateSource();
+        if (immediateSource == null || !immediateSource.getUniqueID().equals(mc.player.getUniqueID())) return;
 
         long now = mc.player.ticksExisted;
         lastHits.values().removeIf(hit -> now - hit.tick > CACHE_TTL_TICKS);
