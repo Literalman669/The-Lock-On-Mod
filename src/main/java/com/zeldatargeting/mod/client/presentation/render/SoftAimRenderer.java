@@ -2,10 +2,10 @@ package com.zeldatargeting.mod.client.presentation.render;
 
 import com.zeldatargeting.mod.ZeldaTargetingMod;
 import com.zeldatargeting.mod.client.presentation.TargetPresentationSnapshot;
+import com.zeldatargeting.mod.client.presentation.core.SoftAimOffset;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -24,30 +24,23 @@ public final class SoftAimRenderer {
             return;
         }
         try {
-            Vec3d look = minecraft.player.getLookVec();
-            double dx = snapshot.getTarget().posX - minecraft.player.posX;
-            double dy = snapshot.getTarget().posY + snapshot.getTarget().height * 0.5D
-                - (minecraft.player.posY + minecraft.player.getEyeHeight());
-            double dz = snapshot.getTarget().posZ - minecraft.player.posZ;
-            double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (length < 0.001D) {
+            // From the player's eyes to the target's middle, both at this frame.
+            float partialTicks = minecraft.getRenderPartialTicks();
+            double dx = snapshot.getInterpolatedX()
+                - interpolate(minecraft.player.lastTickPosX, minecraft.player.posX, partialTicks);
+            double dy = snapshot.getInterpolatedY() + snapshot.getHeight() * 0.5D
+                - (interpolate(minecraft.player.lastTickPosY, minecraft.player.posY, partialTicks)
+                    + minecraft.player.getEyeHeight());
+            double dz = snapshot.getInterpolatedZ()
+                - interpolate(minecraft.player.lastTickPosZ, minecraft.player.posZ, partialTicks);
+            SoftAimOffset offset = SoftAimOffset.compute(
+                minecraft.player.rotationYaw, minecraft.player.rotationPitch, dx, dy, dz);
+            if (offset == null) {
                 return;
             }
-            dx /= length;
-            dy /= length;
-            dz /= length;
-
-            double dot = look.x * dx + look.y * dy + look.z * dz;
-            if (dot < 0.2D) {
-                return;
-            }
-            double crossX = look.z * dy - look.y * dz;
-            double crossY = look.x * dz - look.z * dx;
-            float nudge = (float) Math.min(12.0D, (1.0D - dot) * 80.0D);
-            int x = resolution.getScaledWidth() / 2 + (int) (crossX * nudge * -1.0D);
-            int y = resolution.getScaledHeight() / 2 + (int) (crossY * nudge);
-            int alpha = (int) (Math.min(1.0D, (1.0D - dot) * 4.0D) * 200.0D);
-            int color = alpha << 24 | 0xFFFFAA;
+            int x = resolution.getScaledWidth() / 2 + offset.getX();
+            int y = resolution.getScaledHeight() / 2 + offset.getY();
+            int color = offset.getAlpha() << 24 | 0xFFFFAA;
             int size = 4;
             Gui.drawRect(x - 1, y - size, x + 1, y + size, color);
             Gui.drawRect(x - size, y - 1, x + size, y + 1, color);
@@ -57,5 +50,9 @@ public final class SoftAimRenderer {
                 ZeldaTargetingMod.getLogger().warn("Soft aim renderer skipped a frame", exception);
             }
         }
+    }
+
+    private static double interpolate(double previous, double current, float partialTicks) {
+        return previous + (current - previous) * partialTicks;
     }
 }
