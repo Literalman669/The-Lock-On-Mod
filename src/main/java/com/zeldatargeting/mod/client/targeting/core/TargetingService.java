@@ -15,6 +15,9 @@ public final class TargetingService<T> {
     private long lastCycleMillis = Long.MIN_VALUE;
     private int observedEntityId = Integer.MIN_VALUE;
     private int ticksUntilObservation;
+    // The anchor to aim at when visible. Observations fall back to another anchor
+    // while it is hidden; keeping the preference separate stops that fallback sticking.
+    private TargetAnchor preferredAnchor = TargetAnchor.combatDefault();
 
     public TargetingService(
             TargetProvider<T> provider,
@@ -47,6 +50,7 @@ public final class TargetingService<T> {
                 session.clear(current.getReleaseReason(), nowMillis);
             }
             observedEntityId = Integer.MIN_VALUE;
+            preferredAnchor = TargetAnchor.combatDefault();
             session.beginAcquire(
                 winner.getObservation(),
                 options.getPriority(),
@@ -86,6 +90,7 @@ public final class TargetingService<T> {
         history.record(current.getTarget().getEntityId());
         if (session.beginSwitch(adjacent.getObservation(), options.getPriority(), nowMillis)) {
             lastCycleMillis = nowMillis;
+            preferredAnchor = TargetAnchor.combatDefault();
         }
         return session.snapshot();
     }
@@ -98,12 +103,13 @@ public final class TargetingService<T> {
             return current;
         }
 
-        TargetAnchor preferredAnchor = current.getTarget().getAnchor().cycle(forward);
+        TargetAnchor requested = current.getTarget().getAnchor().cycle(forward);
         TargetObservation<T> observed = provider.observe(
             current.getTarget().getReference(),
-            preferredAnchor
+            requested
         );
         if (observed != null) {
+            preferredAnchor = requested;
             session.changeAnchor(observed, nowMillis);
         }
         return session.snapshot();
@@ -140,7 +146,7 @@ public final class TargetingService<T> {
 
         TargetObservation<T> observed = provider.observe(
             current.getTarget().getReference(),
-            current.getTarget().getAnchor()
+            preferredAnchor
         );
         if (observed == null || !observed.isPresent()) {
             session.beginRelease(LockReleaseReason.TARGET_REMOVED, nowMillis);
@@ -171,6 +177,7 @@ public final class TargetingService<T> {
         history.clear();
         lastCycleMillis = Long.MIN_VALUE;
         observedEntityId = Integer.MIN_VALUE;
+        preferredAnchor = TargetAnchor.combatDefault();
         return session.snapshot();
     }
 
@@ -192,6 +199,7 @@ public final class TargetingService<T> {
             );
             if (replacement != null && replacement.getEntityId() != droppedEntityId) {
                 history.record(droppedEntityId);
+                preferredAnchor = TargetAnchor.combatDefault();
                 session.beginSwitch(replacement.getObservation(), options.getPriority(), nowMillis);
                 return session.snapshot();
             }

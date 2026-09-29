@@ -276,6 +276,35 @@ public class TargetingServiceTest {
     }
 
     @Test
+    public void aimReturnsToTheCenterAfterABriefHeadOnlyFallback() {
+        FakeProvider provider = new FakeProvider();
+        // Locked while the body was hidden, so the lock fell back to the head.
+        TargetObservation<String> headOnly = observation("zombie", 1, 20.0F, true, true, true, 4.0D, 20.0D, TargetAnchor.HEAD);
+        provider.putObservation(headOnly);
+        TargetingService<String> service = lockedService(provider, new TargetHistory(4), headOnly);
+        TargetingOptions options = options(TargetPriority.NEAREST, 20.0D, false);
+
+        LockOnSnapshot<String> snapshot = service.tick(100L, options);
+
+        assertEquals(TargetAnchor.CENTER, provider.requestedAnchors.get(provider.requestedAnchors.size() - 1));
+        assertEquals(TargetAnchor.CENTER, snapshot.getTarget().getAnchor());
+    }
+
+    @Test
+    public void manuallyChosenAnchorIsKeptOnLaterTicks() {
+        FakeProvider provider = new FakeProvider();
+        TargetObservation<String> pig = observation("pig", 1, 8.0F, true, true, true, 4.0D, 20.0D, TargetAnchor.CENTER);
+        provider.putObservation(pig);
+        TargetingService<String> service = lockedService(provider, new TargetHistory(4), pig);
+        TargetingOptions options = options(TargetPriority.NEAREST, 20.0D, false);
+
+        service.cycleAnchor(true, 100L);
+        LockOnSnapshot<String> snapshot = service.tick(150L, options);
+
+        assertEquals(TargetAnchor.LOWER_BODY, snapshot.getTarget().getAnchor());
+    }
+
+    @Test
     public void lockingDuringTheReleaseFadeStartsTheNewLockImmediately() {
         FakeProvider provider = new FakeProvider();
         TargetObservation<String> pig = observation("pig", 1, 8.0F, true, true, true, 4.0D, 20.0D, TargetAnchor.CENTER);
