@@ -49,6 +49,15 @@ public final class CameraRotationPolicy {
         public boolean shouldRemapMovement() {
             return false;
         }
+
+        /**
+         * Whether Zelda fades the player when the camera gets close. Zelda measures
+         * its own straight-behind camera, so under a camera host such as SSR (which
+         * places the camera elsewhere and fades the player itself) it stays out.
+         */
+        public boolean ownsPlayerTransparency() {
+            return offsetOwner == OffsetOwner.ZELDA;
+        }
     }
 
     public static Decision resolve(boolean shoulderSurfingActive) {

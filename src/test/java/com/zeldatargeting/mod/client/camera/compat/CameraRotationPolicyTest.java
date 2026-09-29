@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class CameraRotationPolicyTest {
 
@@ -41,6 +42,12 @@ public class CameraRotationPolicyTest {
             CameraRotationPolicy.OffsetOwner.ZELDA,
             decision.getOffsetOwner()
         );
+    }
+
+    @Test
+    public void onlyTheVanillaCameraLetsZeldaFadeThePlayer() {
+        assertTrue(CameraRotationPolicy.resolve(false).ownsPlayerTransparency());
+        assertFalse(CameraRotationPolicy.resolve(true).ownsPlayerTransparency());
     }
 
     @Test

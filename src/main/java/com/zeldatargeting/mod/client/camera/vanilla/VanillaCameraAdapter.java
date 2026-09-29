@@ -252,7 +252,9 @@ public final class VanillaCameraAdapter implements CameraRuntimeAdapter<EntityLi
                     minecraft.player.renderYawOffset = targetBodyYaw;
                 }
             }
-            transparency.setAlpha(frame.getPlayerAlpha());
+            transparency.setAlpha(compatibilityDecision().ownsPlayerTransparency()
+                ? frame.getPlayerAlpha()
+                : 1.0F);
         } catch (RuntimeException failure) {
             handleApplicationFailure("frame", failure);
         }
