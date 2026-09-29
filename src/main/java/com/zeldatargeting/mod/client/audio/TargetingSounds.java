@@ -4,7 +4,7 @@ import com.zeldatargeting.mod.client.combat.DamageCalculator;
 import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
@@ -109,7 +109,7 @@ public class TargetingSounds {
         lastLockSoundTime = now;
         
         // Check if this is a lethal target for special sound
-        if (target instanceof EntityLiving && TargetingConfig.enableLethalTargetSound) {
+        if (target instanceof EntityLivingBase && TargetingConfig.enableLethalTargetSound) {
             int hitsToKill = DamageCalculator.calculateHitsToKill(target);
             if (hitsToKill == 1) {
                 playLethalTargetSound();
@@ -187,7 +187,7 @@ public class TargetingSounds {
      * Check if a target qualifies for lethal sound
      */
     public static boolean isLethalTarget(Entity target) {
-        if (!(target instanceof EntityLiving)) {
+        if (!(target instanceof EntityLivingBase)) {
             return false;
         }
         

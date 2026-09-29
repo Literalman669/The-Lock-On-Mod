@@ -9,7 +9,6 @@ import com.zeldatargeting.mod.client.session.LockPhase;
 import com.zeldatargeting.mod.client.targeting.core.TargetObservation;
 import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.boss.EntityDragon;
 import net.minecraft.entity.boss.EntityWither;
@@ -45,10 +44,10 @@ public final class TargetPresentationSnapshotFactory {
         float health = finiteOr(target.getHealth(), 0.0F);
         float maxHealth = Math.max(1.0F, finiteOr(target.getMaxHealth(), 1.0F));
         float healthRatio = Math.max(0.0F, Math.min(1.0F, health / maxHealth));
-        int hitsToKill = target instanceof EntityLiving ? DamageCalculator.calculateHitsToKill(target) : -1;
-        float predictedDamage = target instanceof EntityLiving ? DamageCalculator.calculateDamage(target) : 0.0F;
-        String vulnerabilityText = TargetingConfig.showVulnerabilities && target instanceof EntityLiving
-            ? DamageCalculator.getVulnerabilityText((EntityLiving) target) : "";
+        int hitsToKill = DamageCalculator.calculateHitsToKill(target);
+        float predictedDamage = DamageCalculator.calculateDamage(target);
+        String vulnerabilityText = TargetingConfig.showVulnerabilities
+            ? DamageCalculator.getVulnerabilityText(target) : "";
         boolean occluded = lock.getPhase() == LockPhase.OCCLUDED_GRACE || !observation.isVisible();
         PresentationStatus status = PresentationStatusResolver.resolve(
             healthRatio,

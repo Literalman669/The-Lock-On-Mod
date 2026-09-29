@@ -3,9 +3,10 @@ package com.zeldatargeting.mod.client.combat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
+import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.MobEffects;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -29,16 +30,12 @@ public class DamageCalculator {
         }
 
         EntityPlayer player = mc.player;
-        if (player == null || !(target instanceof EntityLiving)) {
+        if (player == null || !(target instanceof EntityLivingBase)) {
             return 0.0f;
         }
         
-        ItemStack heldItem = player.getHeldItemMainhand();
-        if (heldItem.isEmpty()) {
-            return calculateBaseDamage(player, (EntityLiving) target);
-        }
-        
-        return calculateWeaponDamage(player, (EntityLiving) target, heldItem);
+        // An empty hand has no modifiers, so the same vanilla formula covers it
+        return calculateWeaponDamage(player, (EntityLivingBase) target, player.getHeldItemMainhand());
     }
 
     /**
@@ -52,11 +49,11 @@ public class DamageCalculator {
      * Calculate how many hits it would take to kill the target
      */
     public static int calculateHitsToKill(Entity target) {
-        if (!(target instanceof EntityLiving)) {
+        if (!(target instanceof EntityLivingBase)) {
             return -1; // Unknown for non-living entities
         }
         
-        EntityLiving living = (EntityLiving) target;
+        EntityLivingBase living = (EntityLivingBase) target;
         float damage = calculateDamage(target);
         
         if (damage <= 0) {
@@ -71,7 +68,7 @@ public class DamageCalculator {
      * Get damage prediction text for display
      */
     public static String getDamagePredictionText(Entity target) {
-        if (!(target instanceof EntityLiving)) {
+        if (!(target instanceof EntityLivingBase)) {
             return "";
         }
         
@@ -80,7 +77,7 @@ public class DamageCalculator {
             return "No damage";
         }
         
-        float targetHealth = ((EntityLiving) target).getHealth();
+        float targetHealth = ((EntityLivingBase) target).getHealth();
         int hitsToKill = (int) Math.ceil(targetHealth / damage);
         
         String prefix = isRealDamageData(target) ? "" : "~";
@@ -110,72 +107,32 @@ public class DamageCalculator {
         }
     }
     
-    private static float calculateBaseDamage(EntityPlayer player, EntityLiving target) {
-        // Base hand damage (usually 1.0)
-        float baseDamage = 1.0f;
-        
-        // Apply strength effect
-        if (player.isPotionActive(MobEffects.STRENGTH)) {
-            PotionEffect effect = player.getActivePotionEffect(MobEffects.STRENGTH);
-            if (effect != null) {
-                baseDamage += (effect.getAmplifier() + 1) * 3.0f;
-            }
-        }
-        
-        // Apply weakness effect
-        if (player.isPotionActive(MobEffects.WEAKNESS)) {
-            PotionEffect effect = player.getActivePotionEffect(MobEffects.WEAKNESS);
-            if (effect != null) {
-                baseDamage -= (effect.getAmplifier() + 1) * 4.0f;
-            }
-        }
-        
-        return Math.max(0, baseDamage);
-    }
-    
-    private static float calculateWeaponDamage(EntityPlayer player, EntityLiving target, ItemStack weapon) {
-        float baseDamage = 1.0f; // Default base damage
-        
-        // Get weapon base damage using attribute modifiers (MC 1.12.2 method)
+    private static float calculateWeaponDamage(EntityPlayer player, EntityLivingBase target, ItemStack weapon) {
+        // Player base attack damage (1.0) plus the weapon's additive modifiers
+        float attackDamage = (float) player.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).getBaseValue();
         for (AttributeModifier modifier : weapon.getAttributeModifiers(EntityEquipmentSlot.MAINHAND).get(SharedMonsterAttributes.ATTACK_DAMAGE.getName())) {
             if (modifier.getOperation() == 0) { // Addition operation
-                baseDamage += modifier.getAmount();
+                attackDamage += modifier.getAmount();
             }
         }
         
-        // REAL-TIME ATTACK COOLDOWN CALCULATION
-        float attackCooldown = getAttackCooldownProgress(player);
-        baseDamage = 0.2f + baseDamage * attackCooldown * attackCooldown; // MC 1.12.2 attack damage formula
-        
-        // Apply enchantments
-        baseDamage += EnchantmentHelper.getModifierForCreature(weapon, target.getCreatureAttribute());
-        
-        // Apply strength effect
-        if (player.isPotionActive(MobEffects.STRENGTH)) {
-            PotionEffect effect = player.getActivePotionEffect(MobEffects.STRENGTH);
-            if (effect != null) {
-                baseDamage += (effect.getAmplifier() + 1) * 3.0f;
-            }
+        // Strength and Weakness are additive attack damage modifiers in 1.12.2
+        PotionEffect strength = player.getActivePotionEffect(MobEffects.STRENGTH);
+        if (strength != null) {
+            attackDamage += (strength.getAmplifier() + 1) * 3.0f;
+        }
+        PotionEffect weakness = player.getActivePotionEffect(MobEffects.WEAKNESS);
+        if (weakness != null) {
+            attackDamage -= (weakness.getAmplifier() + 1) * 4.0f;
         }
         
-        // Apply weakness effect
-        if (player.isPotionActive(MobEffects.WEAKNESS)) {
-            PotionEffect effect = player.getActivePotionEffect(MobEffects.WEAKNESS);
-            if (effect != null) {
-                baseDamage -= (effect.getAmplifier() + 1) * 4.0f;
-            }
-        }
-        
-        // REAL-TIME CRITICAL HIT AND SPRINT CALCULATIONS
-        boolean wouldCrit = canCriticalHit(player) && attackCooldown > 0.9f;
-        if (wouldCrit) {
-            baseDamage *= 1.5f;
-        }
-        
-        // Apply target's armor and resistance
-        baseDamage = applyArmorReduction(baseDamage, target);
-        
-        return Math.max(0, baseDamage);
+        float damage = DamageFormula.meleeDamage(
+            attackDamage,
+            EnchantmentHelper.getModifierForCreature(weapon, target.getCreatureAttribute()),
+            player.getCooledAttackStrength(0.5f),
+            canCriticalHit(player)
+        );
+        return applyArmorReduction(damage, target);
     }
     
     private static boolean canCriticalHit(EntityPlayer player) {
@@ -186,58 +143,37 @@ public class DamageCalculator {
     }
     
     /**
-     * Get the real-time attack cooldown progress (0.0 to 1.0)
+     * Apply armor damage reduction based on target's armor, toughness, and Resistance
      */
-    private static float getAttackCooldownProgress(EntityPlayer player) {
-        // MC 1.12.2 attack cooldown calculation
-        return player.getCooledAttackStrength(0.5f); // 0.5f is partial tick adjustment
-    }
-    
-    /**
-     * Apply armor damage reduction based on target's armor and toughness
-     */
-    private static float applyArmorReduction(float damage, EntityLiving target) {
-        // Get target's armor value
-        int armor = target.getTotalArmorValue();
-        
-        // Get armor toughness (MC 1.12.2 feature)
-        float toughness = (float) target.getEntityAttribute(SharedMonsterAttributes.ARMOR_TOUGHNESS).getAttributeValue();
-        
-        // Apply damage reduction formula from MC 1.12.2
-        float armorReduction = Math.min(20.0f, Math.max(armor / 5.0f, armor - damage / (2.0f + toughness / 4.0f)));
-        float damageMultiplier = 1.0f - (armorReduction / 25.0f);
-        
-        // Apply resistance potion effect
-        if (target.isPotionActive(MobEffects.RESISTANCE)) {
-            PotionEffect resistance = target.getActivePotionEffect(MobEffects.RESISTANCE);
-            if (resistance != null) {
-                int amplifier = resistance.getAmplifier();
-                float resistanceReduction = (amplifier + 1) * 0.2f; // 20% per level
-                damageMultiplier *= (1.0f - Math.min(1.0f, resistanceReduction));
-            }
-        }
-        
-        return damage * damageMultiplier;
+    private static float applyArmorReduction(float damage, EntityLivingBase target) {
+        IAttributeInstance toughness = target.getEntityAttribute(SharedMonsterAttributes.ARMOR_TOUGHNESS);
+        PotionEffect resistance = target.getActivePotionEffect(MobEffects.RESISTANCE);
+        return DamageFormula.afterArmor(
+            damage,
+            target.getTotalArmorValue(),
+            toughness == null ? 0.0f : (float) toughness.getAttributeValue(),
+            resistance == null ? 0 : resistance.getAmplifier() + 1
+        );
     }
     
     /**
      * Check if the target has specific vulnerabilities
      */
-    public static boolean hasWeakness(EntityLiving target) {
+    public static boolean hasWeakness(EntityLivingBase target) {
         return target.isPotionActive(MobEffects.WEAKNESS);
     }
     
     /**
      * Check if the target has damage resistance
      */
-    public static boolean hasResistance(EntityLiving target) {
+    public static boolean hasResistance(EntityLivingBase target) {
         return target.isPotionActive(MobEffects.RESISTANCE);
     }
     
     /**
      * Get vulnerability indicator text
      */
-    public static String getVulnerabilityText(EntityLiving target) {
+    public static String getVulnerabilityText(EntityLivingBase target) {
         if (hasWeakness(target)) {
             return "WEAK";
         } else if (hasResistance(target)) {
@@ -249,7 +185,7 @@ public class DamageCalculator {
     /**
      * Get vulnerability indicator color
      */
-    public static int getVulnerabilityColor(EntityLiving target) {
+    public static int getVulnerabilityColor(EntityLivingBase target) {
         if (hasWeakness(target)) {
             return 0xFF44FF44; // Green for weakness
         } else if (hasResistance(target)) {

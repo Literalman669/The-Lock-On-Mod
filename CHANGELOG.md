@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Damage estimates now follow vanilla 1.12.2 math for attack charge, enchantment bonus, and critical hits.
+- Damage and hits-to-kill readouts now appear when locked onto players.
+- The real-hit damage cache is now thread-safe between the integrated server and the HUD.
+- Armor stands and invisible entities can no longer be locked onto, and a lock releases when its target turns invisible.
+
 ## 1.4.0
 
 ### Added

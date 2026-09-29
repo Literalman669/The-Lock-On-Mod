@@ -12,6 +12,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.entity.item.EntityArmorStand;
 import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.passive.EntityAnimal;
@@ -75,6 +76,10 @@ public final class EntityDetector implements TargetProvider<EntityLivingBase> {
         if (target == null || player == null || mc.world == null) {
             return null;
         }
+        // Drop the lock if the target turns invisible mid-fight.
+        if (target.isInvisibleToPlayer(player)) {
+            return null;
+        }
         return buildObservation(player, target, preferredAnchor);
     }
 
@@ -85,6 +90,8 @@ public final class EntityDetector implements TargetProvider<EntityLivingBase> {
         if (entity == player
                 || !entity.isEntityAlive()
                 || isSpectatorPlayer(entity)
+                || entity.isInvisibleToPlayer(player)
+                || entity instanceof EntityArmorStand
                 || !isTargetableEntityType(entity)) {
             return null;
         }
