@@ -37,6 +37,17 @@ public final class TargetingMath {
         return (creative ? 6.0D : 3.0D) + bonus;
     }
 
+    /** Distance from a point to the nearest point of a box; zero when inside it. */
+    public static double distanceToBox(
+            double x, double y, double z,
+            double minX, double minY, double minZ,
+            double maxX, double maxY, double maxZ) {
+        double dx = Math.max(0.0D, Math.max(minX - x, x - maxX));
+        double dy = Math.max(0.0D, Math.max(minY - y, y - maxY));
+        double dz = Math.max(0.0D, Math.max(minZ - z, z - maxZ));
+        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
     public static int adjacentIndex(int currentIndex, int count, boolean forward) {
         if (count <= 0) {
             return -1;

@@ -51,4 +51,12 @@ public class TargetingMathTest {
         assertEquals(3.0D, TargetingMath.meleeReach(false, -1.0D), EPSILON);
         assertEquals(3.0D, TargetingMath.meleeReach(false, Double.NaN), EPSILON);
     }
+
+    @Test
+    public void distanceToBoxMeasuresToTheNearestFaceEdgeOrCorner() {
+        // Iron golem sized box (1.4 wide, 2.7 tall) centered 3.5 blocks ahead on z.
+        assertEquals(2.8D, TargetingMath.distanceToBox(0, 1.62, 0, -0.7, 0, 2.8, 0.7, 2.7, 4.2), EPSILON);
+        assertEquals(5.0D, TargetingMath.distanceToBox(-3, 0, -4, 0, 0, 0, 1, 1, 1), EPSILON);
+        assertEquals(0.0D, TargetingMath.distanceToBox(0.5, 0.5, 0.5, 0, 0, 0, 1, 1, 1), EPSILON);
+    }
 }

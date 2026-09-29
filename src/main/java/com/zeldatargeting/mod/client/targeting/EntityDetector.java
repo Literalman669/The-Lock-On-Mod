@@ -114,8 +114,7 @@ public final class EntityDetector implements TargetProvider<EntityLivingBase> {
         }
 
         double distanceSquared = player.getDistanceSq(entity);
-        double range = targetingRange(player);
-        if (distanceSquared > range * range) {
+        if (!isWithinTargetingRange(player, entity, distanceSquared)) {
             return null;
         }
 
@@ -243,6 +242,25 @@ public final class EntityDetector implements TargetProvider<EntityLivingBase> {
         Vec3d end = new Vec3d(point.getX(), point.getY(), point.getZ());
         RayTraceResult result = player.world.rayTraceBlocks(start, end, false, true, false);
         return result == null || result.typeOfHit != RayTraceResult.Type.BLOCK;
+    }
+
+    private static boolean isWithinTargetingRange(
+            EntityPlayer player,
+            EntityLivingBase entity,
+            double distanceSquared) {
+        double range = targetingRange(player);
+        if (!TargetingConfig.syncTargetingRangeWithReach) {
+            return distanceSquared <= range * range;
+        }
+        // Like vanilla reach: from the eyes to the target's hitbox, not to its center,
+        // so large mobs within melee reach can be locked.
+        Vec3d eye = player.getPositionEyes(1.0F);
+        AxisAlignedBB bounds = entity.getEntityBoundingBox().grow(entity.getCollisionBorderSize());
+        return TargetingMath.distanceToBox(
+            eye.x, eye.y, eye.z,
+            bounds.minX, bounds.minY, bounds.minZ,
+            bounds.maxX, bounds.maxY, bounds.maxZ
+        ) <= range;
     }
 
     private static double targetingRange(EntityPlayer player) {
