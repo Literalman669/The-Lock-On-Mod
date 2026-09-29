@@ -125,6 +125,15 @@ public class ShoulderAimSolverTest {
             double targetX,
             double targetY,
             double targetZ) {
+        assertRayMissesByAtMost(aim, state, targetX, targetY, targetZ, MAXIMUM_RAY_MISS);
+    }
+
+    private static double rayMiss(
+            ShoulderAimSolver.AimVector aim,
+            ShoulderCameraState state,
+            double targetX,
+            double targetY,
+            double targetZ) {
         Vec3d view = new Vec3d(aim.getX(), aim.getY(), aim.getZ()).normalize();
         double horizontal = Math.sqrt(
             aim.getX() * aim.getX() + aim.getZ() * aim.getZ()
@@ -146,11 +155,78 @@ public class ShoulderAimSolverTest {
         );
         Vec3d targetFromOrigin = new Vec3d(targetX, targetY, targetZ)
             .subtract(lateralOrigin);
-        double missDistance = targetFromOrigin.crossProduct(view).lengthVector();
+        return targetFromOrigin.crossProduct(view).lengthVector();
+    }
 
+    @Test
+    public void closeTargetsTurnAtMostTheCapWithoutFlipping() {
+        // SSR 2.9.6 defaults: 0.75 block right-shoulder offset, 3 blocks back.
+        ShoulderCameraState state = ShoulderCameraState.active(
+            -0.75D,
+            0.0D,
+            3.0D,
+            Math.sqrt(0.75D * 0.75D + 9.0D)
+        );
+        double previousDeviation = 0.0D;
+        for (double distance = 3.0D; distance >= 0.1D; distance -= 0.05D) {
+            ShoulderAimSolver.AimVector result = ShoulderAimSolver.compensate(0.0D, 0.0D, distance, state);
+            double deviation = yawDegrees(result);
+
+            assertTrue("turned " + deviation + " degrees at " + distance + " blocks",
+                Math.abs(deviation) <= ShoulderAimSolver.MAX_CORRECTION_DEGREES + 0.01D);
+            assertTrue("correction flipped sides at " + distance + " blocks",
+                previousDeviation == 0.0D || Math.signum(deviation) == Math.signum(previousDeviation));
+            previousDeviation = deviation;
+        }
+    }
+
+    @Test
+    public void tinyTargetMovementCausesOnlyATinyTurnUpClose() {
+        ShoulderCameraState state = ShoulderCameraState.active(
+            -0.75D,
+            0.0D,
+            3.0D,
+            Math.sqrt(0.75D * 0.75D + 9.0D)
+        );
+
+        double before = yawDegrees(ShoulderAimSolver.compensate(0.0D, 0.0D, 0.7D, state));
+        double after = yawDegrees(ShoulderAimSolver.compensate(0.01D, 0.0D, 0.7D, state));
+
+        // Moving 1 cm at 0.7 blocks shifts the direct line by under a degree.
+        assertTrue("turned " + Math.abs(after - before) + " degrees", Math.abs(after - before) < 1.0D);
+    }
+
+    @Test
+    public void closeTargetRayStillPassesWithinAZombieWideHitbox() {
+        ShoulderCameraState state = ShoulderCameraState.active(
+            -0.75D,
+            0.0D,
+            3.0D,
+            Math.sqrt(0.75D * 0.75D + 9.0D)
+        );
+
+        // Zombie hitbox half-width 0.3 plus Minecraft's 0.1 pick border.
+        assertRayMissesByAtMost(ShoulderAimSolver.compensate(0.0D, 0.0D, 1.0D, state),
+            state, 0.0D, 0.0D, 1.0D, 0.4D);
+        assertRayMissesByAtMost(ShoulderAimSolver.compensate(0.0D, 0.0D, 1.5D, state),
+            state, 0.0D, 0.0D, 1.5D, 0.4D);
+    }
+
+    private static double yawDegrees(ShoulderAimSolver.AimVector aim) {
+        return Math.toDegrees(Math.atan2(-aim.getX(), aim.getZ()));
+    }
+
+    private static void assertRayMissesByAtMost(
+            ShoulderAimSolver.AimVector aim,
+            ShoulderCameraState state,
+            double targetX,
+            double targetY,
+            double targetZ,
+            double maximumMiss) {
+        double missDistance = rayMiss(aim, state, targetX, targetY, targetZ);
         assertTrue(
             "SSR ray misses target by " + missDistance + " blocks",
-            missDistance < MAXIMUM_RAY_MISS
+            missDistance <= maximumMiss
         );
     }
 }

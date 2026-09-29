@@ -4,9 +4,19 @@ package com.zeldatargeting.mod.client.camera.compat;
  * Converges a target direction against Shoulder Surfing Reloaded's laterally
  * shifted ray origin. The implementation mirrors SSR 2.9.x vector conventions
  * without linking against Minecraft or the optional mod.
+ *
+ * <p>Up close the exact correction grows without bound (about 49 degrees at one
+ * block with SSR's default 0.75 block shoulder offset) and has no solution
+ * once the target is nearer than the offset itself. The correction is
+ * therefore capped at {@link #MAX_CORRECTION_DEGREES}: distant targets stay
+ * exact, and close targets keep a steady turn whose ray still lands inside
+ * most hitboxes.</p>
  */
 public final class ShoulderAimSolver {
-    private static final int CONVERGENCE_ITERATIONS = 4;
+    /** Largest turn away from the direct line to the target. */
+    public static final double MAX_CORRECTION_DEGREES = 25.0D;
+    private static final double MAX_CORRECTION_SINE = Math.sin(Math.toRadians(MAX_CORRECTION_DEGREES));
+    private static final int CONVERGENCE_ITERATIONS = 8;
     private static final double MINIMUM_LENGTH_SQUARED = 1.0E-12D;
 
     private ShoulderAimSolver() {
@@ -27,6 +37,9 @@ public final class ShoulderAimSolver {
             return new AimVector(targetX, targetY, targetZ, false);
         }
 
+        // A lateral shift of at most distance * sin(max) keeps the turn within the cap
+        // and keeps the iteration contracting, so it always converges.
+        double maxLateral = Math.sqrt(targetLengthSquared) * MAX_CORRECTION_SINE;
         double aimX = targetX;
         double aimY = targetY;
         double aimZ = targetZ;
@@ -36,6 +49,10 @@ public final class ShoulderAimSolver {
             Vector camera = rotateAndScaleLocalOffset(state, rotation);
             double parallelDistance = camera.dot(view);
             Vector lateralOrigin = camera.subtract(view.scale(parallelDistance));
+            double lateralLength = Math.sqrt(lateralOrigin.dot(lateralOrigin));
+            if (lateralLength > maxLateral) {
+                lateralOrigin = lateralOrigin.scale(maxLateral / lateralLength);
+            }
             aimX = targetX - lateralOrigin.x;
             aimY = targetY - lateralOrigin.y;
             aimZ = targetZ - lateralOrigin.z;
