@@ -244,6 +244,12 @@ public final class EntityDetector implements TargetProvider<EntityLivingBase> {
         return result == null || result.typeOfHit != RayTraceResult.Type.BLOCK;
     }
 
+    /** The range candidates are currently accepted within (fixed or synced to reach). */
+    public double currentTargetingRange() {
+        EntityPlayer player = mc.player;
+        return player == null ? TargetingConfig.getTargetingRange() : targetingRange(player);
+    }
+
     private static boolean isWithinTargetingRange(
             EntityPlayer player,
             EntityLivingBase entity,

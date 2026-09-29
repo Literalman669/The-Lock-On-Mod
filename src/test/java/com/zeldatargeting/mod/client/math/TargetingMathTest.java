@@ -59,4 +59,12 @@ public class TargetingMathTest {
         assertEquals(5.0D, TargetingMath.distanceToBox(-3, 0, -4, 0, 0, 0, 1, 1, 1), EPSILON);
         assertEquals(0.0D, TargetingMath.distanceToBox(0.5, 0.5, 0.5, 0, 0, 0, 1, 1, 1), EPSILON);
     }
+
+    @Test
+    public void trackingDistanceNeverFallsBelowTheTargetingRange() {
+        assertEquals(20.0D, TargetingMath.effectiveTrackingDistance(20.0D, 16.0D, false), EPSILON);
+        assertEquals(30.0D, TargetingMath.effectiveTrackingDistance(20.0D, 30.0D, false), EPSILON);
+        assertEquals(20.0D, TargetingMath.effectiveTrackingDistance(20.0D, 3.0D, true), EPSILON);
+        assertEquals(6.0D, TargetingMath.effectiveTrackingDistance(2.0D, 3.0D, true), EPSILON);
+    }
 }

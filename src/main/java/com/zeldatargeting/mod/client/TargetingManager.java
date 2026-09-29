@@ -7,6 +7,7 @@ import com.zeldatargeting.mod.client.camera.core.CameraDirector;
 import com.zeldatargeting.mod.client.camera.core.PerspectiveController;
 import com.zeldatargeting.mod.client.camera.vanilla.LegacyCameraProfileAdapter;
 import com.zeldatargeting.mod.client.camera.vanilla.VanillaCameraAdapter;
+import com.zeldatargeting.mod.client.math.TargetingMath;
 import com.zeldatargeting.mod.client.session.LifecycleGuard;
 import com.zeldatargeting.mod.client.session.LockOnSession;
 import com.zeldatargeting.mod.client.session.LockOnSnapshot;
@@ -248,7 +249,11 @@ public final class TargetingManager {
         return new TargetingOptions(
             TargetPriority.fromConfig(TargetingConfig.targetPriority),
             TargetingConfig.lockOnPreset,
-            TargetingConfig.getMaxTrackingDistance(),
+            TargetingMath.effectiveTrackingDistance(
+                TargetingConfig.getMaxTrackingDistance(),
+                entityDetector.currentTargetingRange(),
+                TargetingConfig.syncTargetingRangeWithReach
+            ),
             750L,
             200L,
             250L,

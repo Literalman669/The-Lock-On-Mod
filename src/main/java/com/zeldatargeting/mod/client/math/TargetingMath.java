@@ -37,6 +37,24 @@ public final class TargetingMath {
         return (creative ? 6.0D : 3.0D) + bonus;
     }
 
+    // Synced reach is measured to the hitbox, tracking to the center, so leave room
+    // for wide mobs whose center sits well past the reach distance.
+    static final double SYNCED_REACH_TRACKING_MARGIN = 3.0D;
+
+    /**
+     * Tracking distance that never releases a target the player could lock at that
+     * same moment, even if Max Tracking Distance is set below the targeting range.
+     */
+    public static double effectiveTrackingDistance(
+            double configuredTracking,
+            double targetingRange,
+            boolean rangeSyncedToReach) {
+        double acquisition = rangeSyncedToReach
+            ? targetingRange + SYNCED_REACH_TRACKING_MARGIN
+            : targetingRange;
+        return Math.max(configuredTracking, acquisition);
+    }
+
     /** Distance from a point to the nearest point of a box; zero when inside it. */
     public static double distanceToBox(
             double x, double y, double z,
