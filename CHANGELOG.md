@@ -22,6 +22,20 @@
 - Reduced Motion now also stops critical damage numbers from pulsing and flashing.
 - Target history rings no longer linger for mobs that unloaded or were left behind in another world.
 - Color codes in the config screen no longer risk showing a stray "Â" on Windows builds.
+- With Shoulder Surfing Reloaded, lock-on no longer swings the player sideways or backwards when very close to a target; the shoulder aim correction now tops out at 25 degrees.
+- Lock-on no longer spins the camera when the target is almost directly below or above the player.
+- Shoulder Surfing aim correction now follows SSR's camera smoothly while it moves instead of trailing a tick behind.
+- With Shoulder Surfing Reloaded, the player model is no longer faded by Zelda's own camera check; SSR handles it.
+- A Targeting Range above Max Tracking Distance no longer locks and instantly releases distant targets.
+- Match Range to Reach now measures to the target's hitbox like vanilla reach, so large mobs in melee range can be locked.
+- Pressing lock during the short fade after a kill or unlock now starts a new lock instead of doing nothing.
+- The lock returns to the target's center after briefly aiming at its head while its body was hidden.
+- The Soft Aim Indicator now points toward the target from the player's view.
+- Reset in the config screen now restores only the current page, as documented.
+- An old or unreadable config no longer creates a new backup file on every launch.
+- The cinematic sound theme can now be selected.
+- Arrow and other projectile damage no longer shows as melee damage in the target panel.
+- Lock-on and camera timing use a steady high-resolution clock, avoiding stutter from coarse system timers.
 
 ## 1.4.0
 
