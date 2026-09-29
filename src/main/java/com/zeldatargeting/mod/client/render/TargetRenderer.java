@@ -1,6 +1,7 @@
 package com.zeldatargeting.mod.client.render;
 
 import com.zeldatargeting.mod.ZeldaTargetingMod;
+import com.zeldatargeting.mod.client.ClientClock;
 import com.zeldatargeting.mod.client.TargetingManager;
 import com.zeldatargeting.mod.client.presentation.TargetPresentationSnapshot;
 import com.zeldatargeting.mod.client.presentation.TargetPresentationSnapshotFactory;
@@ -95,7 +96,7 @@ public final class TargetRenderer {
         if (manager == null) {
             return;
         }
-        long nowMillis = System.currentTimeMillis();
+        long nowMillis = ClientClock.nowMillis();
         int events = manager.getPresentationFeedbackController().consumeVisualEvents();
         if (events != PresentationFeedbackEvent.NONE) {
             feedbackEffects.trigger(events, manager.getFeedbackTargetId(), nowMillis);

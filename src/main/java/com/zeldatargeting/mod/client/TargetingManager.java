@@ -101,7 +101,7 @@ public final class TargetingManager {
             return;
         }
 
-        long nowMillis = System.currentTimeMillis();
+        long nowMillis = ClientClock.nowMillis();
         LockOnSnapshot<EntityLivingBase> before = targetingService.snapshot();
         if (before.isPresentationVisible()) {
             Minecraft mc = Minecraft.getMinecraft();
@@ -166,7 +166,7 @@ public final class TargetingManager {
         if (event.phase == TickEvent.Phase.START) {
             cameraCoordinator.onRenderTick(
                 event.renderTickTime,
-                System.currentTimeMillis()
+                ClientClock.nowMillis()
             );
         }
     }
@@ -184,7 +184,7 @@ public final class TargetingManager {
         if (isRidingBlocked()) {
             return;
         }
-        long nowMillis = System.currentTimeMillis();
+        long nowMillis = ClientClock.nowMillis();
         LockOnSnapshot<EntityLivingBase> before = targetingService.snapshot();
         LockOnSnapshot<EntityLivingBase> after = targetingService.acquire(
             nowMillis,
@@ -194,7 +194,7 @@ public final class TargetingManager {
     }
 
     private void releaseLockOn(LockReleaseReason reason) {
-        long nowMillis = System.currentTimeMillis();
+        long nowMillis = ClientClock.nowMillis();
         LockOnSnapshot<EntityLivingBase> before = targetingService.snapshot();
         LockOnSnapshot<EntityLivingBase> after = targetingService.release(reason, nowMillis);
         handleTransition(before, after, false);
@@ -207,7 +207,7 @@ public final class TargetingManager {
             return;
         }
 
-        long nowMillis = System.currentTimeMillis();
+        long nowMillis = ClientClock.nowMillis();
         LockOnSnapshot<EntityLivingBase> after = targetingService.cycle(
             forward,
             nowMillis,
