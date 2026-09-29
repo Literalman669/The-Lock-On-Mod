@@ -25,10 +25,18 @@ public final class DamageFormula {
         float strength = clamp(cooldown, 0.0F, 1.0F);
         float damage = attackDamage * (0.2F + strength * strength * 0.8F);
         float bonus = enchantBonus * strength;
-        if (critConditions && strength > 0.9F) {
+        if (isCritical(strength, critConditions)) {
             damage *= 1.5F;
         }
         return Math.max(0.0F, damage + bonus);
+    }
+
+    /**
+     * Whether a melee hit is critical: the movement conditions hold and the attack
+     * is more than 90% charged.
+     */
+    public static boolean isCritical(float cooldown, boolean critConditions) {
+        return critConditions && cooldown > 0.9F;
     }
 
     /**

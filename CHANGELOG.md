@@ -8,6 +8,12 @@
 - Damage and hits-to-kill readouts now appear when locked onto players.
 - The real-hit damage cache is now thread-safe between the integrated server and the HUD.
 - Armor stands and invisible entities can no longer be locked onto, and a lock releases when its target turns invisible.
+- Damage numbers now appear on multiplayer servers, not just in singleplayer.
+- Damage numbers mark only real critical hits from your own attacks instead of random hits.
+- Damage number animation now runs at the same speed at any frame rate, and pauses with the game.
+- Reduced Motion now also stops critical damage numbers from pulsing and flashing.
+- Target history rings no longer linger for mobs that unloaded or were left behind in another world.
+- Color codes in the config screen no longer risk showing a stray "Â" on Windows builds.
 
 ## 1.4.0
 

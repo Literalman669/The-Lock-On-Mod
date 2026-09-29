@@ -39,13 +39,6 @@ public class DamageCalculator {
     }
 
     /**
-     * Returns true if the damage value is a real observed hit (not a manual estimate).
-     */
-    public static boolean isRealDamageData(Entity target) {
-        return DamageEventListener.hasDamageData(target);
-    }
-    
-    /**
      * Calculate how many hits it would take to kill the target
      */
     public static int calculateHitsToKill(Entity target) {
@@ -62,49 +55,6 @@ public class DamageCalculator {
         
         float targetHealth = living.getHealth();
         return (int) Math.ceil(targetHealth / damage);
-    }
-    
-    /**
-     * Get damage prediction text for display
-     */
-    public static String getDamagePredictionText(Entity target) {
-        if (!(target instanceof EntityLivingBase)) {
-            return "";
-        }
-        
-        float damage = calculateDamage(target);
-        if (damage <= 0) {
-            return "No damage";
-        }
-        
-        float targetHealth = ((EntityLivingBase) target).getHealth();
-        int hitsToKill = (int) Math.ceil(targetHealth / damage);
-        
-        String prefix = isRealDamageData(target) ? "" : "~";
-        if (hitsToKill == 1) {
-            return String.format("%s%.1f dmg (LETHAL)", prefix, damage);
-        } else if (hitsToKill <= 99) {
-            return String.format("%s%.1f dmg (%d hits)", prefix, damage, hitsToKill);
-        } else {
-            return String.format("%s%.1f dmg", prefix, damage);
-        }
-    }
-    
-    /**
-     * Get color for damage prediction based on lethality
-     */
-    public static int getDamagePredictionColor(Entity target) {
-        int hitsToKill = calculateHitsToKill(target);
-        
-        if (hitsToKill == 1) {
-            return 0xFFFF4444; // Bright red for lethal
-        } else if (hitsToKill <= 3) {
-            return 0xFFFFAA44; // Orange for few hits
-        } else if (hitsToKill <= 6) {
-            return 0xFFFFFF44; // Yellow for moderate
-        } else {
-            return 0xFFAAAAAA; // Gray for many hits
-        }
     }
     
     private static float calculateWeaponDamage(EntityPlayer player, EntityLivingBase target, ItemStack weapon) {
@@ -135,8 +85,11 @@ public class DamageCalculator {
         return applyArmorReduction(damage, target);
     }
     
-    private static boolean canCriticalHit(EntityPlayer player) {
-        // Real critical hit conditions for MC 1.12.2
+    /**
+     * Whether the player's movement allows a critical hit (MC 1.12.2 rules).
+     * Attack charge is checked separately by {@link DamageFormula#isCritical}.
+     */
+    public static boolean canCriticalHit(EntityPlayer player) {
         return player.fallDistance > 0.0f && !player.onGround && !player.isOnLadder() &&
                !player.isInWater() && !player.isPotionActive(MobEffects.BLINDNESS) &&
                !player.isRiding() && !player.isSprinting();
@@ -180,17 +133,5 @@ public class DamageCalculator {
             return "RESIST";
         }
         return "";
-    }
-    
-    /**
-     * Get vulnerability indicator color
-     */
-    public static int getVulnerabilityColor(EntityLivingBase target) {
-        if (hasWeakness(target)) {
-            return 0xFF44FF44; // Green for weakness
-        } else if (hasResistance(target)) {
-            return 0xFF4444FF; // Blue for resistance
-        }
-        return 0xFFFFFFFF; // White default
     }
 }

@@ -18,6 +18,10 @@ group = 'com.zeldatargeting.mod' // http://maven.apache.org/guides/mini/guide-na
 archivesBaseName = 'zelda-targeting'
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+// Sources use UTF-8 (e.g. the § color codes); without this Windows compiles them as Cp1252.
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
 
 minecraft {
     // The mappings can be changed at any time, and must be in the following format.

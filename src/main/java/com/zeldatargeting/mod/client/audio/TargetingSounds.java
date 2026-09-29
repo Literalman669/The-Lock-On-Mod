@@ -184,17 +184,6 @@ public class TargetingSounds {
     }
     
     /**
-     * Check if a target qualifies for lethal sound
-     */
-    public static boolean isLethalTarget(Entity target) {
-        if (!(target instanceof EntityLivingBase)) {
-            return false;
-        }
-        
-        return DamageCalculator.calculateHitsToKill(target) == 1;
-    }
-    
-    /**
      * Get target lock sound based on theme and variety settings
      */
     private static SoundEvent getTargetLockSound() {

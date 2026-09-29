@@ -91,6 +91,10 @@ public final class TargetHistoryRenderer {
     }
 
     private void removeExpiredTargets() {
-        targetHistory.removeIf(entity -> entity == null || !entity.isEntityAlive());
+        // Also drop entities that unloaded or belong to a world the player has left.
+        targetHistory.removeIf(entity -> entity == null
+            || !entity.isEntityAlive()
+            || minecraft.world == null
+            || minecraft.world.getEntityByID(entity.getEntityId()) != entity);
     }
 }
