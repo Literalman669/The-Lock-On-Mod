@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.lang.reflect.Constructor;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -18,6 +19,16 @@ public class ConfigGuiButtonTest {
 
         assertTrue(GuiButton.class.isAssignableFrom(buttonType));
         assertEquals(420, button.width);
+    }
+
+    @Test
+    public void selectedFlagMarksTheCurrentTab() {
+        ConfigGuiButton tab = new ConfigGuiButton(1, 0, 0, 60, 14, "Camera");
+        assertFalse(tab.isSelected());
+
+        tab.setSelected(true);
+
+        assertTrue(tab.isSelected());
     }
 
     private Class<?> loadButtonType() {

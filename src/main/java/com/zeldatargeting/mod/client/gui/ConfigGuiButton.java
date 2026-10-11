@@ -15,8 +15,19 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  */
 @SideOnly(Side.CLIENT)
 public final class ConfigGuiButton extends GuiButton {
+    private boolean selected;
+
     public ConfigGuiButton(int buttonId, int x, int y, int width, int height, String displayString) {
         super(buttonId, x, y, width, height, displayString);
+    }
+
+    /** Whether this button is the current choice, such as the open page's tab. */
+    public boolean isSelected() {
+        return selected;
+    }
+
+    public void setSelected(boolean selected) {
+        this.selected = selected;
     }
 
     @Override
@@ -26,7 +37,7 @@ public final class ConfigGuiButton extends GuiButton {
         }
 
         this.hovered = mouseX >= this.x && mouseY >= this.y && mouseX < this.x + this.width && mouseY < this.y + this.height;
-        int borderColor = this.enabled ? 0xFF202020 : 0xFF1A1A1A;
+        int borderColor = this.selected ? 0xFFFFAA00 : this.enabled ? 0xFF202020 : 0xFF1A1A1A;
         int fillColor = this.enabled ? (this.hovered ? 0xFF969696 : 0xFF7F7F7F) : 0xFF555555;
         int highlightColor = this.enabled ? (this.hovered ? 0xFFC0C0C0 : 0xFFA0A0A0) : 0xFF707070;
 
