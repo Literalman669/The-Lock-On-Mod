@@ -1,27 +1,35 @@
 package com.zeldatargeting.mod.client.gui;
 
 /**
- * The focused, player-facing sections of the 1.4 configuration screen.
+ * The player-facing pages of the configuration screen, in tab order.
  */
 public enum ConfigPage {
-    PRESETS("Presets", "Choose the overall feel"),
-    TARGETING("Targeting", "Range, selection, and filters"),
-    CAMERA("Camera", "Follow, focus, and third-person behavior"),
-    HUD("HUD", "Panel, target ring, and placement"),
-    AUDIO("Audio", "Target feedback and sound tuning"),
-    COMPATIBILITY("Compatibility", "Vanilla-safe compatibility controls"),
-    ACCESSIBILITY("Accessibility", "Palette, opacity, and reduced motion");
+    PRESETS("Presets", "Presets", "Choose how lock-on feels"),
+    TARGETING("Targeting", "Targeting", "Range, selection, and what can be targeted"),
+    CAMERA("Camera", "Camera", "How the camera follows your target"),
+    HUD("HUD & Ring", "HUD", "The target panel and the markers on your target"),
+    COMBAT("Combat Info", "Combat", "Damage readouts and damage numbers"),
+    SOUND("Sound", "Sound", "Lock-on sounds"),
+    ACCESSIBILITY("Accessibility", "Access", "Colors and motion"),
+    ADVANCED("Advanced", "Advanced", "Defaults are fine for most players");
 
     private final String title;
+    private final String shortTitle;
     private final String description;
 
-    ConfigPage(String title, String description) {
+    ConfigPage(String title, String shortTitle, String description) {
         this.title = title;
+        this.shortTitle = shortTitle;
         this.description = description;
     }
 
     public String getTitle() {
         return title;
+    }
+
+    /** A shorter tab label for windows too narrow for the full titles. */
+    public String getShortTitle() {
+        return shortTitle;
     }
 
     public String getDescription() {

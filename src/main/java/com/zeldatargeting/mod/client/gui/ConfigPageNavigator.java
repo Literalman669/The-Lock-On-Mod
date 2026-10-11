@@ -33,6 +33,11 @@ public final class ConfigPageNavigator {
         pendingPage = Math.min(currentPage + 1, totalPages - 1);
     }
 
+    /** Requests a jump to {@code index}, clamped to the available pages. */
+    public void requestPage(int index) {
+        pendingPage = Math.max(0, Math.min(index, totalPages - 1));
+    }
+
     public void requestPrevious() {
         pendingPage = Math.max(currentPage - 1, 0);
     }

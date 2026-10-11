@@ -26,6 +26,23 @@ public class ConfigPageNavigatorTest {
         assertEquals(1, ((Integer) getCurrentPage.invoke(navigator)).intValue());
     }
 
+    @Test
+    public void requestPageJumpsOnApplyAndClamps() {
+        ConfigPageNavigator navigator = new ConfigPageNavigator(8);
+
+        navigator.requestPage(5);
+        navigator.applyPendingPage();
+        assertEquals(5, navigator.getCurrentPage());
+
+        navigator.requestPage(99);
+        navigator.applyPendingPage();
+        assertEquals(7, navigator.getCurrentPage());
+
+        navigator.requestPage(-3);
+        navigator.applyPendingPage();
+        assertEquals(0, navigator.getCurrentPage());
+    }
+
     private Class<?> loadNavigator() {
         try {
             return Class.forName("com.zeldatargeting.mod.client.gui.ConfigPageNavigator");

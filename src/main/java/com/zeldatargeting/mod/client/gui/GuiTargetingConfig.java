@@ -141,7 +141,10 @@ public class GuiTargetingConfig extends GuiScreen {
                 y = this.addControl(ControlSpec.floatValue("ringGlowStrength", "Ring Glow", 0.0F, 1.5F, 0.1F), y);
                 return this.addControl(ControlSpec.toggle("ringHealthArcEnabled", "Show Ring Health Arc"), y);
 
-            case AUDIO:
+            case COMBAT:
+                return y;
+
+            case SOUND:
                 y = this.addSection("Main Audio", y);
                 y = this.addControl(ControlSpec.toggle("enableSounds", "Enable Sounds"), y);
                 y = this.addControl(ControlSpec.floatValue("soundVolume", "Master Sound Volume", 0.0F, 1.0F, 0.1F), y);
@@ -161,7 +164,7 @@ public class GuiTargetingConfig extends GuiScreen {
                 y = this.addControl(ControlSpec.floatValue("targetLostVolume", "Target Lost Volume", 0.0F, 1.0F, 0.1F), y);
                 return this.addControl(ControlSpec.floatValue("targetLostPitch", "Target Lost Pitch", 0.5F, 2.0F, 0.1F), y);
 
-            case COMPATIBILITY:
+            case ADVANCED:
                 y = this.addSection("Vanilla is active by default. Optional adapters stay safe when absent.", y);
                 y = this.addControl(ControlSpec.toggle("ssrCompensationEnabled", "SSR / Epic Fight Aim"), y);
                 return this.addControl(ControlSpec.toggle("debugCompatibility", "Compatibility Debug Output"), y);
