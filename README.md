@@ -34,28 +34,29 @@ The default key bindings are available from Minecraft's Controls menu under Lock
 
 Open **Mods**, select **Lock On**, then choose **Config**.
 
-The configuration is arranged as seven pages:
+The configuration has eight pages, reached from the tabs along the top:
 
-1. Presets
-2. Targeting
-3. Camera
-4. HUD
-5. Audio
-6. Compatibility
-7. Accessibility
+1. **Presets**: Cinematic, Balanced, or Snappy, each described on the page.
+2. **Targeting**: lock-on range, how targets are picked, and what can be targeted.
+3. **Camera**: how the camera follows your target.
+4. **HUD & Ring**: the target panel and the markers on your target.
+5. **Combat Info**: damage readouts and damage numbers.
+6. **Sound**: lock-on sounds and their volumes.
+7. **Accessibility**: color palette and Reduced Motion.
+8. **Advanced**: camera tuning, sound pitch, check rates, and compatibility options. The defaults are fine for most players.
 
-Preset choices are previewed first. Choose **Save** to keep the preview, **Cancel** to discard it, or **Reset** to restore the current page's default settings.
+Rest the mouse on any setting for a moment to see what it does and its default. Numbers are sliders: drag them to set a value. Options that do not apply right now are greyed out, and their tip says which option to turn on. Every change previews immediately; choose **Save** to keep it, **Cancel** to discard it, or **Reset Page** to return the current page to the selected preset.
 
 ### Choosing targets
 
-- **Entity Blacklist** (Targeting page) lists entities that are never targeted, separated by commas. `minecraft:iron_golem` blocks one mob, `iceandfire:` blocks every mob from that mod, and a plain word such as `golem` blocks any mob whose name contains it.
-- **Disable While Riding** (on by default) blocks lock-on while you ride a horse, boat, or other mount, and releases an existing lock when you mount.
+- **Never Target** (Targeting page) lists entities that are never targeted, separated by commas. `minecraft:iron_golem` blocks one mob, `iceandfire:` blocks every mob from that mod, and a plain word such as `golem` blocks any mob whose name contains it.
+- **Turn Off While Riding** (on by default) blocks lock-on while you ride a horse, boat, or other mount, and releases an existing lock when you mount.
 - **Switch Target on Kill** (on by default) moves the lock to the next eligible target when the current one dies.
 - **Level View Without Target** (Camera page, on by default) eases your view back to the horizon when you press lock and nothing is in range.
 - **Match Range to Reach** (off by default) replaces the targeting range with your melee reach: 3 blocks in survival, 6 in creative, plus any extra reach other mods grant.
-- **Target Check Interval** and **Filter Check Interval** set how often, in ticks, a lock re-checks line of sight and range, and whether the target still passes your filters. Higher values save work but react more slowly.
+- **Target Check Rate** and **Filter Check Rate** (Advanced page) set how often, in ticks, a lock re-checks line of sight and range, and whether the target still passes your filters. Higher values save work but react more slowly.
 
-**Only My Hits** (Accessibility page, under Damage Numbers) limits damage numbers to your own melee hits. Arrows and other projectiles are not counted.
+**Only My Hits** (Combat Info page, under Damage Numbers) limits damage numbers to your own melee hits. Arrows and other projectiles are not counted.
 
 ### Target ring feedback
 
@@ -63,7 +64,7 @@ While locked on, the ring reacts to the fight: it flashes and pops on your criti
 
 ## Compatibility
 
-Vanilla first and third person are the automatic fallback. Shoulder Surfing Reloaded 2.9.x is optional: Lock On keeps SSR's chosen shoulder side and camera offset while locked. With SSR's default **Adaptive** crosshair, Lock On asks SSR for its dynamic, eye-based crosshair for as long as a lock lasts, so every target in reach can be hit whatever the shoulder offset; the crosshair returns to normal when the lock ends. With SSR's dynamic crosshair, it uses the normal eye ray. A user-selected **Static** crosshair starts its attack ray at the shoulder camera, so it cannot reach targets closer than the camera's sideways offset (about 2.5 blocks with a wide offset); Lock On aligns the aim as closely as that ray allows. Lock On does not change SSR's offsets or saved configuration. The Compatibility page can turn off shoulder-aware aim alignment.
+Vanilla first and third person are the automatic fallback. Shoulder Surfing Reloaded 2.9.x is optional: Lock On keeps SSR's chosen shoulder side and camera offset while locked. With SSR's default **Adaptive** crosshair, Lock On asks SSR for its dynamic, eye-based crosshair for as long as a lock lasts, so every target in reach can be hit whatever the shoulder offset; the crosshair returns to normal when the lock ends. With SSR's dynamic crosshair, it uses the normal eye ray. A user-selected **Static** crosshair starts its attack ray at the shoulder camera, so it cannot reach targets closer than the camera's sideways offset (about 2.5 blocks with a wide offset); Lock On aligns the aim as closely as that ray allows. Lock On does not change SSR's offsets or saved configuration. **Shoulder Surfing / Epic Fight Aim** on the Advanced page turns this alignment off.
 
 Epic Fight 2.2.8 is optional. In its Battle mode with SSR active, Lock On faces the player's body and Epic Fight's melee attacks toward the target. With SSR's default **Adaptive** crosshair, the lock's dynamic crosshair (see above) keeps the crosshair and Epic Fight's attack direction in agreement. The chosen shoulder view remains in place, and SSR's saved crosshair setting is untouched. SSR's **Dynamic** mode also works; a user-selected **Static** mode keeps its static crosshair position while Epic Fight's melee attacks face the target.
 
@@ -71,7 +72,7 @@ Epic Fight and Lock On both use **R** by default. Rebind either **Toggle Battle/
 
 ## Target HUD
 
-Regular targets use a compact, gold-edged plaque with their name, health bar, and enabled combat readouts. Boss targets use a wider banner near the top center of the screen. The boss banner is enabled by default for new settings and appears for the Wither, Ender Dragon, or targets with at least 100 maximum health. When locked onto a vanilla boss, its duplicate vanilla health bar is hidden until the lock ends. Existing configurations keep their saved **Boss Style Panel** choice; turn it on under **HUD** to see the boss banner.
+Regular targets use a compact, gold-edged plaque with their name, health bar, and enabled combat readouts. Boss targets use a wider banner near the top center of the screen. The boss banner is enabled by default for new settings and appears for the Wither, Ender Dragon, or targets with at least 100 maximum health. When locked onto a vanilla boss, its duplicate vanilla health bar is hidden until the lock ends. Existing configurations keep their saved **Boss Banner** choice; turn it on under **HUD & Ring** to see it.
 
 Better Third Person is not supported. It conflicts with Shoulder Surfing Reloaded's camera ownership model and should not be combined with it.
 

@@ -16,6 +16,7 @@
 ### Changed
 
 - The mod is now called Lock On. Its settings, key bindings, and config file are unchanged; delete the old zelda-targeting JAR when updating.
+- The config screen has eight pages with tabs, plain-language labels, sliders with units, hover help, and options that grey out when they do not apply. Tuning and debug options moved to an Advanced page.
 
 ### Fixed
 
