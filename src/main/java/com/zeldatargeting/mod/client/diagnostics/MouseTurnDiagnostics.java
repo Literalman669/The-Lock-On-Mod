@@ -13,14 +13,14 @@ import java.util.Locale;
  * Output is on. Each frame is split into three parts:
  * <ul>
  *   <li>between frames (game ticks, server packets, other mods' tick code),</li>
- *   <li>Zelda Targeting's own camera writes at the start of the frame,</li>
+ *   <li>Lock On's own camera writes at the start of the frame,</li>
  *   <li>the rest of the frame, where vanilla applies the mouse.</li>
  * </ul>
  * Turning the mouse counts do not explain is logged with its part, rate-limited,
  * plus a summary every ten seconds.
  */
 public final class MouseTurnDiagnostics {
-    private static final String PREFIX = "[ZT Mouse] ";
+    private static final String PREFIX = "[Lock On Mouse] ";
     private static final long SUMMARY_INTERVAL_MILLIS = 10_000L;
     private static final long LINE_INTERVAL_MILLIS = 250L;
     private static final long SLOW_FRAME_MILLIS = 50L;
@@ -51,7 +51,7 @@ public final class MouseTurnDiagnostics {
         minecraft = Minecraft.getMinecraft();
     }
 
-    /** Call at the start of the render tick, before Zelda Targeting's camera code. */
+    /** Call at the start of the render tick, before Lock On's camera code. */
     public void beforeModCamera(long nowMillis) {
         EntityPlayer player = minecraft.player;
         if (!TargetingConfig.debugCompatibility || player == null) {
@@ -84,7 +84,7 @@ public final class MouseTurnDiagnostics {
         frameOpen = true;
     }
 
-    /** Call at the start of the render tick, after Zelda Targeting's camera code. */
+    /** Call at the start of the render tick, after Lock On's camera code. */
     public void afterModCamera() {
         EntityPlayer player = minecraft.player;
         if (!frameOpen || player == null) {
@@ -143,7 +143,7 @@ public final class MouseTurnDiagnostics {
         if (nowMillis - summaryStartedAtMillis >= SUMMARY_INTERVAL_MILLIS) {
             log(nowMillis, true, String.format(Locale.ROOT,
                 "10 s summary: %d frames, slowest %d ms, largest dx %d, unexplained frame turns %d,"
-                    + " between-frame turns %d, Zelda camera turn %.1f deg",
+                    + " between-frame turns %d, Lock On camera turn %.1f deg",
                 frames, slowestFrameMillis, largestDeltaX, unexplainedFrameTurns,
                 betweenFrameTurns, modTurnTotal));
             summaryStartedAtMillis = nowMillis;

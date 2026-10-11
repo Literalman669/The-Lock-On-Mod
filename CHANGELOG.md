@@ -8,10 +8,14 @@
 - Cycle Aim Point key (V by default) moves the lock between the target's head, body, and feet.
 - Pressing lock with nothing to target now plays a soft click and, with Level View Without Target (Camera page, on by default), eases the view back to the horizon. Pressing lock while riding explains why nothing happened.
 - Only My Hits (Damage Numbers) shows numbers only for your own melee hits.
-- Compatibility Debug Output now also logs where unexpected view turning comes from (`[ZT Mouse]` lines in the log), and each swing during a lock with its aim, distance, speeds, and whether it hit (`[ZT Aim]` lines).
+- Compatibility Debug Output now also logs where unexpected view turning comes from (`[Lock On Mouse]` lines in the log), and each swing during a lock with its aim, distance, speeds, and whether it hit (`[Lock On Aim]` lines).
 - Target ring effects: a flash on your critical hits, a shockwave when the target drops to low health, and a burst where it dies. Reduced Motion keeps only the color flash.
 - Entity blacklist, Disable While Riding, and Match Range to Reach, carried over from 1.3.1.
 - Reticle Color for the ring's corner brackets.
+
+### Changed
+
+- The mod is now called Lock On. Its settings, key bindings, and config file are unchanged; delete the old zelda-targeting JAR when updating.
 
 ### Fixed
 
@@ -30,7 +34,7 @@
 - With Shoulder Surfing Reloaded, lock-on no longer swings the player sideways or backwards when very close to a target; the shoulder aim correction now tops out at 25 degrees.
 - Lock-on no longer spins the camera when the target is almost directly below or above the player.
 - Shoulder Surfing aim correction now follows SSR's camera smoothly while it moves instead of trailing a tick behind.
-- With Shoulder Surfing Reloaded, the player model is no longer faded by Zelda's own camera check; SSR handles it.
+- With Shoulder Surfing Reloaded, the player model is no longer faded by Lock On's own camera check; SSR handles it.
 - A Targeting Range above Max Tracking Distance no longer locks and instantly releases distant targets.
 - Match Range to Reach now measures to the target's hitbox like vanilla reach, so large mobs in melee range can be locked.
 - Pressing lock during the short fade after a kill or unlock now starts a new lock instead of doing nothing.

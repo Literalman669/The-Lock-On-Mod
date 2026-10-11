@@ -1,5 +1,5 @@
 # Key Bindings
-key.categories.zeldatargeting=Zelda Targeting
+key.categories.zeldatargeting=Lock On
 key.zeldatargeting.lockon_toggle=Toggle Lock-On
 key.zeldatargeting.cycle_left=Cycle Target Left
 key.zeldatargeting.cycle_right=Cycle Target Right

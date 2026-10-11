@@ -23,7 +23,7 @@ import java.util.Locale;
  * whether the target actually lost health.
  */
 public final class AttackAimDiagnostics {
-    private static final String PREFIX = "[ZT Aim] ";
+    private static final String PREFIX = "[Lock On Aim] ";
     private static final int RESULT_DELAY_TICKS = 15;
 
     private final Minecraft minecraft;

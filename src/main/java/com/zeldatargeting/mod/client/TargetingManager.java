@@ -378,7 +378,7 @@ public final class TargetingManager {
                 .getShoulderSurfingBridge()
                 .captureState();
             ZeldaTargetingMod.getLogger().info(
-                "[ZT Debug] Lock-on activated | SSR loaded: "
+                "[Lock On Debug] Lock-on activated | SSR loaded: "
                     + ZeldaTargetingMod.isShoulderSurfingLoaded()
                     + " | SSR active: " + shoulder.isActive()
                     + " | SSR state valid: " + shoulder.canCompensate()

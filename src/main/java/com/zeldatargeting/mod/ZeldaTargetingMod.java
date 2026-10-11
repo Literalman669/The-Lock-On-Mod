@@ -19,7 +19,7 @@ import org.apache.logging.log4j.Logger;
 @Mod(modid = ZeldaTargetingMod.MODID, name = ZeldaTargetingMod.NAME, version = ZeldaTargetingMod.VERSION, clientSideOnly = true, guiFactory = "com.zeldatargeting.mod.client.gui.GuiFactory")
 public class ZeldaTargetingMod {
     public static final String MODID = "zeldatargeting";
-    public static final String NAME = "Zelda Targeting";
+    public static final String NAME = "Lock On";
     public static final String VERSION = "1.4.1";
     
     @Mod.Instance(MODID)
@@ -36,14 +36,14 @@ public class ZeldaTargetingMod {
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         logger = event.getModLog();
-        logger.info("Zelda Targeting Mod - Pre-Initialization");
+        logger.info("Lock On - Pre-Initialization");
         
         proxy.preInit(event);
     }
     
     @EventHandler
     public void init(FMLInitializationEvent event) {
-        logger.info("Zelda Targeting Mod - Initialization");
+        logger.info("Lock On - Initialization");
 
         // All mods have completed pre-initialization by this point. SSR creates
         // its client config there, before its camera singleton can be queried.
@@ -77,7 +77,7 @@ public class ZeldaTargetingMod {
     
     @EventHandler
     public void postInit(FMLPostInitializationEvent event) {
-        logger.info("Zelda Targeting Mod - Post-Initialization");
+        logger.info("Lock On - Post-Initialization");
         
         proxy.postInit(event);
     }
