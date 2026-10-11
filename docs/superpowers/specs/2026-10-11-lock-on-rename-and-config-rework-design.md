@@ -82,7 +82,8 @@ the three file-only damage-number colors.
 
 Help text style: one or two plain sentences, second person, no internal terms.
 The tooltip adds a grey last line: `Default: <value>` for on/off and choices, and
-`Default: <value> - Range <min>-<max>` for sliders, using the same units as the label.
+`Default: <value> - Range: <min> to <max>` for sliders, using the same units as the label
+(for example `Default: 16 blocks - Range: 1 block to 64 blocks`).
 
 ### 1. Presets ("Choose how lock-on feels")
 
@@ -285,7 +286,8 @@ through the existing reflection on `TargetingSettings` and the `ConfigEditSessio
 New unit tests, in the existing JUnit style:
 - **Coverage:** every `TargetingSettings` field appears on exactly one page,
   except the documented exclusions; every layout entry names a real field of the
-  right type; every slider's range matches `TargetingSettingsValidator`.
+  right type; every slider's range lies within `TargetingSettingsValidator`'s range
+  (Filter Check Rate's slider starts at 5 although 1 is a valid stored value).
 - **Dependencies:** each dependency names a boolean field that exists.
 - `ConfigValueFormat`: units, rounding, the ticks-to-seconds display, and default lines.
 - `ConfigTooltipTimer`: rest delay, hide on leave, scroll, and click, and suppression until re-entry.
