@@ -1,5 +1,6 @@
 package com.zeldatargeting.mod.client.gui;
 
+import com.zeldatargeting.mod.ZeldaTargetingMod;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
@@ -103,7 +104,7 @@ public class GuiTextSettingEdit extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         this.drawDefaultBackground();
-        this.drawCenteredString(this.fontRenderer, "Zelda Targeting", this.width / 2, 10, 0xFFFFFF);
+        this.drawCenteredString(this.fontRenderer, ZeldaTargetingMod.NAME, this.width / 2, 10, 0xFFFFFF);
         this.drawCenteredString(this.fontRenderer, "§6" + this.title, this.width / 2, 24, 0xFFAA00);
         for (int i = 0; i < this.hints.length; i++) {
             this.drawCenteredString(this.fontRenderer, "§7" + this.hints[i], this.width / 2, 44 + i * 12, 0xA0A0A0);

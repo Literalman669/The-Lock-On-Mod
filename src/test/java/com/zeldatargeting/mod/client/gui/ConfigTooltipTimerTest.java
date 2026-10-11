@@ -67,6 +67,21 @@ public class ConfigTooltipTimerTest {
     }
 
     @Test
+    public void repeatedInteractionKeepsTheClickedSettingQuiet() {
+        // A slider press reports a click and then a drag in the same moment.
+        ConfigTooltipTimer timer = new ConfigTooltipTimer();
+        timer.hover(a, 0L);
+        timer.hover(a, 700L);
+
+        timer.interact();
+        timer.interact();
+        timer.hover(a, 800L);
+        timer.hover(a, 5000L);
+
+        assertFalse(timer.isVisible(5000L));
+    }
+
+    @Test
     public void interactionWhileNothingHoveredIsHarmless() {
         ConfigTooltipTimer timer = new ConfigTooltipTimer();
         timer.interact();

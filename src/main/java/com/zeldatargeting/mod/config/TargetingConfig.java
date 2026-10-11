@@ -146,7 +146,7 @@ public final class TargetingConfig {
             legacyBackupFailure = false;
             legacyBackupFile = null;
         } catch (IllegalStateException exception) {
-            ZeldaTargetingMod.getLogger().error("Could not save Zelda Targeting configuration", exception);
+            ZeldaTargetingMod.getLogger().error("Could not save Lock On configuration", exception);
         }
     }
 
@@ -175,7 +175,7 @@ public final class TargetingConfig {
         legacyBackupFile = result.getBackupFile();
 
         if (legacyBackupFailure) {
-            ZeldaTargetingMod.getLogger().warn("Could not create a backup of the previous Zelda Targeting configuration");
+            ZeldaTargetingMod.getLogger().warn("Could not create a backup of the previous Lock On configuration");
         }
     }
 

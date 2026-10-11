@@ -37,6 +37,15 @@ public final class ConfigValueFormat {
         }
     }
 
+    /**
+     * ON in green or OFF in red, or both in grey while the option does not apply, so a
+     * greyed-out toggle does not keep its bright color.
+     */
+    public static String toggleText(boolean on, boolean blocked) {
+        String color = blocked ? "§7" : on ? "§a" : "§c";
+        return color + (on ? "ON" : "OFF");
+    }
+
     public static String defaultLine(String defaultText) {
         return "Default: " + defaultText;
     }

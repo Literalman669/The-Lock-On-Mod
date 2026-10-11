@@ -48,6 +48,14 @@ public class ConfigValueFormatTest {
     }
 
     @Test
+    public void toggleStateIsColoredOnlyWhileTheOptionApplies() {
+        assertEquals("§aON", ConfigValueFormat.toggleText(true, false));
+        assertEquals("§cOFF", ConfigValueFormat.toggleText(false, false));
+        assertEquals("§7ON", ConfigValueFormat.toggleText(true, true));
+        assertEquals("§7OFF", ConfigValueFormat.toggleText(false, true));
+    }
+
+    @Test
     public void defaultLines() {
         assertEquals("Default: 16 blocks - Range: 1 block to 64 blocks",
             ConfigValueFormat.sliderDefaultLine(16, 1, 64, ConfigUnit.BLOCKS));

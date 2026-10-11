@@ -154,6 +154,15 @@ public class ConfigLayoutTest {
     }
 
     @Test
+    public void presetsPageEndsWithThePreviewNote() {
+        List<ConfigLayout.Item> items = ConfigLayout.page(ConfigPage.PRESETS);
+        ConfigLayout.Item last = items.get(items.size() - 1);
+
+        assertTrue(last.isSection());
+        assertEquals("Picking a preset previews it. Save keeps it.", last.getSectionTitle());
+    }
+
+    @Test
     public void unknownChoiceValueShowsRawValue() {
         assertEquals("legacy-theme", entry(ConfigPage.SOUND, "soundTheme").choiceLabel("legacy-theme"));
     }

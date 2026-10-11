@@ -14,8 +14,16 @@ public class ConfigSliderMathTest {
 
     @Test
     public void snapsToStep() {
-        assertEquals(0.51, ConfigSliderMath.valueAt(0.5, 0.01, 1.0, 0.05), 1.0E-9);
+        assertEquals(0.5, ConfigSliderMath.valueAt(0.5, 0.01, 1.0, 0.05), 1.0E-9);
         assertEquals(0.3, ConfigSliderMath.valueAt(0.33, 0.0, 1.0, 0.1), 1.0E-9);
+    }
+
+    @Test
+    public void presetSmoothnessValuesAreReachable() {
+        for (double preset : new double[] {0.15, 0.4, 0.65}) {
+            double fraction = ConfigSliderMath.fractionOf(preset, 0.01, 1.0);
+            assertEquals(preset, ConfigSliderMath.valueAt(fraction, 0.01, 1.0, 0.05), 1.0E-9);
+        }
     }
 
     @Test

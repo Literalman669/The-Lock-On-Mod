@@ -26,7 +26,11 @@ public final class ConfigTooltipTimer {
 
     /** A click, drag, scroll, or page change: hide now, and keep the current setting quiet until left. */
     public void interact() {
-        suppressed = target;
+        // A second interaction in a row (a slider press is a click and then a drag) keeps
+        // the first one's suppression instead of clearing it.
+        if (target != null) {
+            suppressed = target;
+        }
         // Moving onto another setting after this (such as on a new page) restarts the full delay.
         target = null;
     }

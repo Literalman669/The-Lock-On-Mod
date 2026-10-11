@@ -6,6 +6,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -38,6 +45,20 @@ public class ModIdentityTest {
         String lang = resource("/assets/zeldatargeting/lang/en_us.lang");
 
         assertTrue(lang.replace("\r\n", "\n").contains("key.categories.zeldatargeting=Lock On\n"));
+    }
+
+    @Test
+    public void noShippedTextUsesTheOldName() throws IOException {
+        List<String> offenders = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(Paths.get("src", "main"))) {
+            for (Path file : (Iterable<Path>) files.filter(Files::isRegularFile)::iterator) {
+                String text = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+                if (text.contains("Zelda Targeting")) {
+                    offenders.add(file.toString());
+                }
+            }
+        }
+        assertEquals("files still saying \"Zelda Targeting\"", Collections.emptyList(), offenders);
     }
 
     private static String resource(String path) throws IOException {

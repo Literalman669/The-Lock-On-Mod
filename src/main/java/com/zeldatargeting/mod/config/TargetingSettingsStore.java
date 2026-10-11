@@ -52,7 +52,7 @@ public final class TargetingSettingsStore {
         try {
             configuration = readProperties();
         } catch (IOException exception) {
-            throw new IllegalStateException("Could not read Zelda Targeting configuration", exception);
+            throw new IllegalStateException("Could not read Lock On configuration", exception);
         }
 
         write(configuration, "meta", "schemaVersion", SCHEMA_VERSION);
@@ -156,7 +156,7 @@ public final class TargetingSettingsStore {
         try {
             writeProperties(configuration);
         } catch (IOException exception) {
-            throw new IllegalStateException("Could not save Zelda Targeting configuration", exception);
+            throw new IllegalStateException("Could not save Lock On configuration", exception);
         }
     }
 
@@ -283,7 +283,7 @@ public final class TargetingSettingsStore {
 
         FileOutputStream output = new FileOutputStream(configFile);
         try {
-            properties.store(output, "Zelda Targeting 1.4 configuration");
+            properties.store(output, "Lock On configuration");
         } finally {
             output.close();
         }

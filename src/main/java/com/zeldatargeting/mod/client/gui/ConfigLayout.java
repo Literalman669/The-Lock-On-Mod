@@ -61,7 +61,8 @@ public final class ConfigLayout {
             preset("balanced", "Balanced",
                 "The default. A steady camera that keeps up with most fights."),
             preset("snappy", "Snappy",
-                "A fast camera that stays in your current view. Good for quick, close combat."));
+                "A fast camera that stays in your current view. Good for quick, close combat."),
+            "Picking a preset previews it. Save keeps it.");
 
         page(ConfigPage.TARGETING,
             slider("targetingRange", "Lock-On Range", 1, 64, 1, ConfigUnit.BLOCKS,

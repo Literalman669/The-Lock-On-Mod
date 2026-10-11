@@ -141,8 +141,13 @@ public class GuiTargetingConfig extends GuiScreen {
         this.controls.put(button, entry);
         this.naturalContentButtonY.put(button, y);
         if (entry.getKind() == ConfigEntry.Kind.PRESET) {
-            this.presetNotes.add(new TextRow(entry.getHelp(), y + 23));
-            return y + 38;
+            // The preset's description sits under its button, wrapped to the column.
+            int noteY = y + 23;
+            for (String line : ConfigTextWrap.wrap(entry.getHelp(), columnWidth, this.fontRenderer::getStringWidth)) {
+                this.presetNotes.add(new TextRow(line, noteY));
+                noteY += LINE_HEIGHT;
+            }
+            return noteY + 5;
         }
         return y + 24;
     }
@@ -306,7 +311,8 @@ public class GuiTargetingConfig extends GuiScreen {
         }
         switch (entry.getKind()) {
             case TOGGLE:
-                return entry.getLabel() + ": " + ((Boolean) value ? "§aON" : "§cOFF");
+                boolean blocked = ConfigDependencies.blockingDependency(entry, this.editSession.workingCopy()) != null;
+                return entry.getLabel() + ": " + ConfigValueFormat.toggleText((Boolean) value, blocked);
             case CHOICE:
                 return entry.getLabel() + ": " + entry.choiceLabel(String.valueOf(value));
             case COLOR:
@@ -493,6 +499,10 @@ public class GuiTargetingConfig extends GuiScreen {
                 break;
             }
         }
+        if (this.isDraggingSlider()) {
+            // No tooltips while a slider is held, even over other rows.
+            hoveredButton = null;
+        }
         final ConfigEntry entry = hoveredButton == null ? null : this.controls.get(hoveredButton);
         long nowMillis = System.nanoTime() / 1_000_000L;
         this.tooltipTimer.hover(entry, nowMillis);
@@ -515,6 +525,15 @@ public class GuiTargetingConfig extends GuiScreen {
             this.fontRenderer.drawStringWithShadow(lines.get(i), box.getX() + 4, box.getY() + 4 + i * LINE_HEIGHT, 0xFFFFFF);
         }
         GlStateManager.enableDepth();
+    }
+
+    private boolean isDraggingSlider() {
+        for (GuiButton button : this.controls.keySet()) {
+            if (button instanceof ConfigSlider && ((ConfigSlider) button).isDragging()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<String> tooltipLines(ConfigEntry entry, int width) {

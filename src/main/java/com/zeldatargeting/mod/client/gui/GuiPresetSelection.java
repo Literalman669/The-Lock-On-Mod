@@ -1,5 +1,6 @@
 package com.zeldatargeting.mod.client.gui;
 
+import com.zeldatargeting.mod.ZeldaTargetingMod;
 import com.zeldatargeting.mod.config.TargetingConfig;
 import com.zeldatargeting.mod.config.TargetingPreset;
 import net.minecraft.client.gui.GuiButton;
@@ -51,7 +52,7 @@ public final class GuiPresetSelection extends GuiScreen {
 
         int centerX = width / 2;
         int top = Math.max(64, height / 2 - 80);
-        drawCenteredString(fontRenderer, "Zelda Targeting 1.4", centerX, top - 36, 0xFFFFFF);
+        drawCenteredString(fontRenderer, ZeldaTargetingMod.NAME, centerX, top - 36, 0xFFFFFF);
         drawCenteredString(fontRenderer, "Choose how lock-on should feel. You can fine-tune it later.", centerX, top - 20, 0xAAAAAA);
         drawCenteredString(fontRenderer, "Smooth camera and automatic third person.", centerX, top + 23, 0xAAAAAA);
         drawCenteredString(fontRenderer, "Responsive default for most play styles.", centerX, top + 67, 0xAAAAAA);
