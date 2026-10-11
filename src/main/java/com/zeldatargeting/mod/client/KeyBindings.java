@@ -9,11 +9,13 @@ public class KeyBindings {
     public static final String CATEGORY = "key.categories.zeldatargeting";
     public static final int DEFAULT_CYCLE_LEFT_KEY = Keyboard.KEY_Z;
     public static final int DEFAULT_CYCLE_RIGHT_KEY = Keyboard.KEY_X;
+    public static final int DEFAULT_CYCLE_AIM_POINT_KEY = Keyboard.KEY_V;
     
     public static KeyBinding lockOnToggle;
     public static KeyBinding cycleTargetLeft;
     public static KeyBinding cycleTargetRight;
     public static KeyBinding cameraFreeLook;
+    public static KeyBinding cycleAimPoint;
     
     public static void init() {
         // Lock-on toggle key (default: R)
@@ -47,6 +49,14 @@ public class KeyBindings {
         ClientRegistry.registerKeyBinding(lockOnToggle);
         ClientRegistry.registerKeyBinding(cycleTargetLeft);
         ClientRegistry.registerKeyBinding(cycleTargetRight);
+        // Cycle the locked aim point: head, body, feet (default: V)
+        cycleAimPoint = new KeyBinding(
+            "key.zeldatargeting.cycle_aim_point",
+            DEFAULT_CYCLE_AIM_POINT_KEY,
+            CATEGORY
+        );
+
         ClientRegistry.registerKeyBinding(cameraFreeLook);
+        ClientRegistry.registerKeyBinding(cycleAimPoint);
     }
 }

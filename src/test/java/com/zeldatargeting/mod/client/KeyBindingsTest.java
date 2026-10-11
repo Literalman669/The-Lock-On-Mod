@@ -11,4 +11,9 @@ public class KeyBindingsTest {
         assertEquals(Keyboard.KEY_Z, KeyBindings.DEFAULT_CYCLE_LEFT_KEY);
         assertEquals(Keyboard.KEY_X, KeyBindings.DEFAULT_CYCLE_RIGHT_KEY);
     }
+
+    @Test
+    public void aimPointCyclingDefaultsToAKeyVanillaLeavesFree() {
+        assertEquals(Keyboard.KEY_V, KeyBindings.DEFAULT_CYCLE_AIM_POINT_KEY);
+    }
 }

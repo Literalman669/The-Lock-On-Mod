@@ -18,6 +18,7 @@ public class TargetingSettings {
     public String targetPriority = "nearest";
     public boolean syncTargetingRangeWithReach = false;
     public boolean disableLockOnWhenRiding = true;
+    public boolean quickSwitchOnKill = true;
 
     public boolean showReticle = true;
     public boolean showHealthBar = true;
@@ -38,6 +39,7 @@ public class TargetingSettings {
     public float maxPitchAdjustment = 60.0F;
     public float maxYawAdjustment = 90.0F;
     public boolean autoThirdPerson = false;
+    public boolean recenterWithoutTarget = true;
     public boolean ssrCompensationEnabled = true;
     public float cameraFocusYOffset = 0.0F;
     public String lockOnPreset = "balanced";
@@ -71,6 +73,7 @@ public class TargetingSettings {
     public float damageNumbersScale = 1.0F;
     public int damageNumbersDuration = 60;
     public boolean damageNumbersCrits = true;
+    public boolean damageNumbersOwnHitsOnly = false;
     public boolean damageNumbersColors = true;
     public int damageNumbersColor = 0xFFFFFF;
     public int criticalDamageColor = 0xFFFF00;
@@ -110,6 +113,7 @@ public class TargetingSettings {
         copy.targetPriority = targetPriority;
         copy.syncTargetingRangeWithReach = syncTargetingRangeWithReach;
         copy.disableLockOnWhenRiding = disableLockOnWhenRiding;
+        copy.quickSwitchOnKill = quickSwitchOnKill;
 
         copy.showReticle = showReticle;
         copy.showHealthBar = showHealthBar;
@@ -130,6 +134,7 @@ public class TargetingSettings {
         copy.maxPitchAdjustment = maxPitchAdjustment;
         copy.maxYawAdjustment = maxYawAdjustment;
         copy.autoThirdPerson = autoThirdPerson;
+        copy.recenterWithoutTarget = recenterWithoutTarget;
         copy.ssrCompensationEnabled = ssrCompensationEnabled;
         copy.cameraFocusYOffset = cameraFocusYOffset;
         copy.lockOnPreset = lockOnPreset;
@@ -163,6 +168,7 @@ public class TargetingSettings {
         copy.damageNumbersScale = damageNumbersScale;
         copy.damageNumbersDuration = damageNumbersDuration;
         copy.damageNumbersCrits = damageNumbersCrits;
+        copy.damageNumbersOwnHitsOnly = damageNumbersOwnHitsOnly;
         copy.damageNumbersColors = damageNumbersColors;
         copy.damageNumbersColor = damageNumbersColor;
         copy.criticalDamageColor = criticalDamageColor;

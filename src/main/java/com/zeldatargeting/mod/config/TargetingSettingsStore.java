@@ -65,12 +65,14 @@ public final class TargetingSettingsStore {
         write(configuration, "targeting", "targetPriority", settings.targetPriority);
         write(configuration, "targeting", "syncTargetingRangeWithReach", settings.syncTargetingRangeWithReach);
         write(configuration, "targeting", "disableLockOnWhenRiding", settings.disableLockOnWhenRiding);
+        write(configuration, "targeting", "quickSwitchOnKill", settings.quickSwitchOnKill);
 
         write(configuration, "camera", "enableCameraLockOn", settings.enableCameraLockOn);
         write(configuration, "camera", "cameraSmoothness", settings.cameraSmoothness);
         write(configuration, "camera", "maxPitchAdjustment", settings.maxPitchAdjustment);
         write(configuration, "camera", "maxYawAdjustment", settings.maxYawAdjustment);
         write(configuration, "camera", "autoThirdPerson", settings.autoThirdPerson);
+        write(configuration, "camera", "recenterWithoutTarget", settings.recenterWithoutTarget);
         write(configuration, "camera", "cameraFocusYOffset", settings.cameraFocusYOffset);
         write(configuration, "camera", "perModeSmoothingEnabled", settings.perModeSmoothingEnabled);
 
@@ -120,6 +122,7 @@ public final class TargetingSettingsStore {
         write(configuration, "damageNumbers", "damageNumbersScale", settings.damageNumbersScale);
         write(configuration, "damageNumbers", "damageNumbersDuration", settings.damageNumbersDuration);
         write(configuration, "damageNumbers", "damageNumbersCrits", settings.damageNumbersCrits);
+        write(configuration, "damageNumbers", "damageNumbersOwnHitsOnly", settings.damageNumbersOwnHitsOnly);
         write(configuration, "damageNumbers", "damageNumbersColors", settings.damageNumbersColors);
         write(configuration, "damageNumbers", "damageNumbersColor", settings.damageNumbersColor);
         write(configuration, "damageNumbers", "criticalDamageColor", settings.criticalDamageColor);
@@ -171,12 +174,14 @@ public final class TargetingSettingsStore {
         settings.targetPriority = readString(configuration, "targeting", "targetPriority", defaults.targetPriority);
         settings.syncTargetingRangeWithReach = readBoolean(configuration, "targeting", "syncTargetingRangeWithReach", defaults.syncTargetingRangeWithReach);
         settings.disableLockOnWhenRiding = readBoolean(configuration, "targeting", "disableLockOnWhenRiding", defaults.disableLockOnWhenRiding);
+        settings.quickSwitchOnKill = readBoolean(configuration, "targeting", "quickSwitchOnKill", defaults.quickSwitchOnKill);
 
         settings.enableCameraLockOn = readBoolean(configuration, "camera", "enableCameraLockOn", defaults.enableCameraLockOn);
         settings.cameraSmoothness = readFloat(configuration, "camera", "cameraSmoothness", defaults.cameraSmoothness);
         settings.maxPitchAdjustment = readFloat(configuration, "camera", "maxPitchAdjustment", defaults.maxPitchAdjustment);
         settings.maxYawAdjustment = readFloat(configuration, "camera", "maxYawAdjustment", defaults.maxYawAdjustment);
         settings.autoThirdPerson = readBoolean(configuration, "camera", "autoThirdPerson", defaults.autoThirdPerson);
+        settings.recenterWithoutTarget = readBoolean(configuration, "camera", "recenterWithoutTarget", defaults.recenterWithoutTarget);
         settings.cameraFocusYOffset = readFloat(configuration, "camera", "cameraFocusYOffset", defaults.cameraFocusYOffset);
         settings.perModeSmoothingEnabled = readBoolean(configuration, "camera", "perModeSmoothingEnabled", defaults.perModeSmoothingEnabled);
 
@@ -226,6 +231,7 @@ public final class TargetingSettingsStore {
         settings.damageNumbersScale = readFloat(configuration, "damageNumbers", "damageNumbersScale", defaults.damageNumbersScale);
         settings.damageNumbersDuration = readInt(configuration, "damageNumbers", "damageNumbersDuration", defaults.damageNumbersDuration);
         settings.damageNumbersCrits = readBoolean(configuration, "damageNumbers", "damageNumbersCrits", defaults.damageNumbersCrits);
+        settings.damageNumbersOwnHitsOnly = readBoolean(configuration, "damageNumbers", "damageNumbersOwnHitsOnly", defaults.damageNumbersOwnHitsOnly);
         settings.damageNumbersColors = readBoolean(configuration, "damageNumbers", "damageNumbersColors", defaults.damageNumbersColors);
         settings.damageNumbersColor = readInt(configuration, "damageNumbers", "damageNumbersColor", defaults.damageNumbersColor);
         settings.criticalDamageColor = readInt(configuration, "damageNumbers", "criticalDamageColor", defaults.criticalDamageColor);

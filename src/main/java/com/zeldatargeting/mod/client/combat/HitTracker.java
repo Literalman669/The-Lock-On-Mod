@@ -31,6 +31,7 @@ public class HitTracker {
 
     private final Minecraft mc = Minecraft.getMinecraft();
     private final DamageNumbersRenderer damageNumbers;
+    private final HitAttribution ownHits = new HitAttribution(CRIT_ATTRIBUTION_TICKS);
     private Map<Integer, Float> lastHealth = new HashMap<>();
     private Map<Integer, Float> currentHealth = new HashMap<>();
     private long clientTicks;
@@ -47,6 +48,7 @@ public class HitTracker {
         EntityPlayer player = event.getEntityPlayer();
         if (player != mc.player || !player.world.isRemote) return;
 
+        ownHits.recordAttack(event.getTarget().getEntityId(), clientTicks);
         // The attack cooldown has not been reset yet, so this matches the real hit.
         if (DamageFormula.isCritical(player.getCooledAttackStrength(0.5f), DamageCalculator.canCriticalHit(player))) {
             critTargetId = event.getTarget().getEntityId();
@@ -61,12 +63,14 @@ public class HitTracker {
         if (event.phase != TickEvent.Phase.END) return;
         if (mc.world == null || mc.player == null) {
             lastHealth.clear();
+            ownHits.clear();
             critTargetId = -1;
             return;
         }
         if (mc.isGamePaused()) return;
 
         clientTicks++;
+        ownHits.prune(clientTicks);
         // Damage numbers need every nearby entity; ring effects only the locked target.
         if (TargetingConfig.enableDamageNumbers) {
             double rangeSq = TRACKING_RANGE * TRACKING_RANGE;
@@ -78,10 +82,10 @@ public class HitTracker {
                 }
             }
         }
-        int targetId = feedbackTargetId();
-        Entity target = targetId < 0 ? null : mc.world.getEntityByID(targetId);
-        if (target instanceof EntityLivingBase && !currentHealth.containsKey(targetId)) {
-            observe((EntityLivingBase) target);
+        observeFeedbackTarget(feedbackTargetId());
+        TargetingManager manager = TargetingManager.getInstance();
+        if (manager != null) {
+            observeFeedbackTarget(manager.getJustKilledTargetId());
         }
 
         // Entities that left tracking are forgotten, so re-entering never reports a hit.
@@ -104,12 +108,21 @@ public class HitTracker {
             critTargetId = -1;
         }
 
-        if (TargetingConfig.enableDamageNumbers) {
+        if (TargetingConfig.enableDamageNumbers
+                && (!TargetingConfig.damageNumbersOwnHitsOnly || ownHits.isOwnHit(id, clientTicks))) {
             damageNumbers.spawn(entity, previous - health, isCritical, isLethal);
         }
-        // The lock may already be releasing on the killing blow, so match by id.
-        if (id == feedbackTargetId()) {
-            TargetingManager.getInstance().getPresentationFeedbackController().onDamage(isCritical, isLethal);
+        // The lock may already be releasing, or have switched away, on the killing blow, so match by id.
+        TargetingManager manager = TargetingManager.getInstance();
+        if (manager != null && manager.isFeedbackTarget(id)) {
+            manager.getPresentationFeedbackController().onDamage(isCritical, isLethal);
+        }
+    }
+
+    private void observeFeedbackTarget(int targetId) {
+        Entity target = targetId < 0 ? null : mc.world.getEntityByID(targetId);
+        if (target instanceof EntityLivingBase && !currentHealth.containsKey(targetId)) {
+            observe((EntityLivingBase) target);
         }
     }
 

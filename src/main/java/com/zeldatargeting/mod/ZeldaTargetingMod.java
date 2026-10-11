@@ -2,6 +2,7 @@ package com.zeldatargeting.mod;
 
 import com.zeldatargeting.mod.client.TargetingManager;
 import com.zeldatargeting.mod.client.camera.compat.EpicFightBridge;
+import com.zeldatargeting.mod.client.camera.compat.ShoulderCrosshairPolicy;
 import com.zeldatargeting.mod.client.camera.compat.ShoulderSurfingBridge;
 import com.zeldatargeting.mod.config.TargetingConfig;
 import com.zeldatargeting.mod.proxy.CommonProxy;
@@ -19,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 public class ZeldaTargetingMod {
     public static final String MODID = "zeldatargeting";
     public static final String NAME = "Zelda Targeting";
-    public static final String VERSION = "1.4.0";
+    public static final String VERSION = "1.4.1";
     
     @Mod.Instance(MODID)
     public static ZeldaTargetingMod instance;
@@ -59,20 +60,19 @@ public class ZeldaTargetingMod {
         // and was causing crashes due to FML networking changes
         
         proxy.init(event);
-        if (Loader.isModLoaded("epicfight")) {
-            shoulderSurfingBridge.registerAdaptiveCrosshair(() -> {
-                Minecraft minecraft = Minecraft.getMinecraft();
-                TargetingManager manager = TargetingManager.getInstance();
-                return TargetingConfig.ssrCompensationEnabled
-                    && manager != null
-                    && manager.isActive()
-                    && minecraft.player != null
-                    && minecraft.getRenderViewEntity() == minecraft.player
-                    && shoulderSurfingBridge.isActive()
-                    && shoulderSurfingBridge.isAdaptiveCrosshairMode()
-                    && epicFightBridge.isBattleMode();
-            });
-        }
+        // While locked, SSR's Adaptive crosshair uses its eye ray so every target in
+        // reach can be hit, whatever the shoulder offset (see ShoulderCrosshairPolicy).
+        shoulderSurfingBridge.registerAdaptiveCrosshair(() -> {
+            Minecraft minecraft = Minecraft.getMinecraft();
+            TargetingManager manager = TargetingManager.getInstance();
+            return ShoulderCrosshairPolicy.useDynamicCrosshair(
+                TargetingConfig.ssrCompensationEnabled,
+                manager != null && manager.isActive(),
+                minecraft.player != null && minecraft.getRenderViewEntity() == minecraft.player,
+                shoulderSurfingBridge.isActive(),
+                shoulderSurfingBridge.isAdaptiveCrosshairMode()
+            );
+        });
     }
     
     @EventHandler

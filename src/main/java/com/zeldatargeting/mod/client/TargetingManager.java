@@ -5,8 +5,12 @@ import com.zeldatargeting.mod.client.camera.CameraCoordinator;
 import com.zeldatargeting.mod.client.camera.compat.ShoulderCameraState;
 import com.zeldatargeting.mod.client.camera.core.CameraDirector;
 import com.zeldatargeting.mod.client.camera.core.PerspectiveController;
+import com.zeldatargeting.mod.client.camera.core.ViewLevelEasing;
 import com.zeldatargeting.mod.client.camera.vanilla.LegacyCameraProfileAdapter;
 import com.zeldatargeting.mod.client.camera.vanilla.VanillaCameraAdapter;
+import com.zeldatargeting.mod.client.audio.TargetingSounds;
+import com.zeldatargeting.mod.client.diagnostics.AttackAimDiagnostics;
+import com.zeldatargeting.mod.client.diagnostics.MouseTurnDiagnostics;
 import com.zeldatargeting.mod.client.math.TargetingMath;
 import com.zeldatargeting.mod.client.session.LifecycleGuard;
 import com.zeldatargeting.mod.client.session.LockOnSession;
@@ -26,10 +30,14 @@ import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+
+import java.util.Locale;
 
 public final class TargetingManager {
     private static TargetingManager instance;
@@ -39,7 +47,13 @@ public final class TargetingManager {
     private final CameraCoordinator<EntityLivingBase> cameraCoordinator;
     private final TargetingService<EntityLivingBase> targetingService;
     private final PresentationFeedbackController presentationFeedbackController;
+    private final ViewLevelEasing viewLeveling = new ViewLevelEasing(220L);
+    private final MouseTurnDiagnostics mouseDiagnostics = new MouseTurnDiagnostics();
+    private final AttackAimDiagnostics attackDiagnostics = new AttackAimDiagnostics();
     private int ticksSinceValidation;
+    // A target killed this tick that the lock already switched away from, so hit
+    // feedback (the kill burst) still recognises it. Cleared at the next tick.
+    private int justKilledTargetId = -1;
 
     private TargetingManager() {
         cameraAdapter = new VanillaCameraAdapter();
@@ -92,6 +106,8 @@ public final class TargetingManager {
             cycleTarget(false);
         } else if (KeyBindings.cycleTargetRight.isPressed()) {
             cycleTarget(true);
+        } else if (KeyBindings.cycleAimPoint.isPressed()) {
+            cycleAimPoint();
         }
     }
 
@@ -101,6 +117,8 @@ public final class TargetingManager {
             return;
         }
 
+        justKilledTargetId = -1;
+        attackDiagnostics.onClientTick(isActive() ? referencedTarget(targetingService.snapshot()) : null);
         long nowMillis = ClientClock.nowMillis();
         LockOnSnapshot<EntityLivingBase> before = targetingService.snapshot();
         if (before.isPresentationVisible()) {
@@ -163,12 +181,34 @@ public final class TargetingManager {
 
     @SubscribeEvent
     public void onRenderTick(TickEvent.RenderTickEvent event) {
+        long nowMillis = ClientClock.nowMillis();
         if (event.phase == TickEvent.Phase.START) {
+            mouseDiagnostics.beforeModCamera(nowMillis);
             cameraCoordinator.onRenderTick(
                 event.renderTickTime,
-                ClientClock.nowMillis()
+                nowMillis
             );
+            applyViewLeveling(nowMillis);
+            mouseDiagnostics.afterModCamera();
+        } else {
+            mouseDiagnostics.onFrameEnd(nowMillis);
         }
+    }
+
+    /** Eases the pitch toward level, adding to the view like mouse movement does. */
+    private void applyViewLeveling(long nowMillis) {
+        Minecraft minecraft = Minecraft.getMinecraft();
+        EntityPlayer player = minecraft.player;
+        if (!viewLeveling.isActive()) {
+            return;
+        }
+        if (player == null || minecraft.currentScreen != null || cameraCoordinator.isActive()) {
+            viewLeveling.cancel();
+            return;
+        }
+        float step = viewLeveling.pitchStep(nowMillis);
+        player.rotationPitch += step;
+        player.prevRotationPitch += step;
     }
 
     private void toggleLockOn() {
@@ -181,7 +221,13 @@ public final class TargetingManager {
     }
 
     private void acquireTarget() {
+        Minecraft minecraft = Minecraft.getMinecraft();
         if (isRidingBlocked()) {
+            minecraft.player.sendStatusMessage(
+                new TextComponentTranslation("zeldatargeting.message.riding_blocked"),
+                true
+            );
+            TargetingSounds.playNoTargetSound();
             return;
         }
         long nowMillis = ClientClock.nowMillis();
@@ -191,6 +237,32 @@ public final class TargetingManager {
             currentOptions()
         );
         handleTransition(before, after, false);
+        if (!after.isTracking() && minecraft.player != null) {
+            TargetingSounds.playNoTargetSound();
+            if (TargetingConfig.recenterWithoutTarget) {
+                viewLeveling.start(minecraft.player.rotationPitch, nowMillis);
+            }
+        }
+    }
+
+    private void cycleAimPoint() {
+        long nowMillis = ClientClock.nowMillis();
+        LockOnSnapshot<EntityLivingBase> before = targetingService.snapshot();
+        if (!before.isTracking()) {
+            return;
+        }
+        LockOnSnapshot<EntityLivingBase> after = targetingService.cycleAnchor(true, nowMillis);
+        handleTransition(before, after, false);
+        TargetObservation<EntityLivingBase> target = after.getTarget();
+        if (target != null && after.getTransitionId() != before.getTransitionId()) {
+            Minecraft.getMinecraft().player.sendStatusMessage(
+                new TextComponentTranslation(
+                    "zeldatargeting.message.aim_point."
+                        + target.getAnchor().name().toLowerCase(Locale.ROOT)
+                ),
+                true
+            );
+        }
     }
 
     private void releaseLockOn(LockReleaseReason reason) {
@@ -257,7 +329,7 @@ public final class TargetingManager {
             750L,
             200L,
             250L,
-            false,
+            TargetingConfig.quickSwitchOnKill,
             TargetingConfig.updateFrequency
         );
     }
@@ -268,6 +340,15 @@ public final class TargetingManager {
             boolean lifecycleClear) {
         if (after.getTransitionId() == before.getTransitionId()) {
             return;
+        }
+
+        // Switch Target on Kill moves on in the same tick the target dies, before
+        // HitTracker sees the killing blow; remember the dead target for it.
+        EntityLivingBase previous = referencedTarget(before);
+        if (after.getPhase() == LockPhase.SWITCHING
+                && previous != null
+                && !previous.isEntityAlive()) {
+            justKilledTargetId = previous.getEntityId();
         }
 
         presentationFeedbackController.onTransition(toPresentationSnapshot(after), !lifecycleClear);
@@ -340,6 +421,20 @@ public final class TargetingManager {
     public int getFeedbackTargetId() {
         TargetObservation<EntityLivingBase> target = targetingService.snapshot().getTarget();
         return target == null ? -1 : target.getEntityId();
+    }
+
+    /** Entity id of a target killed this tick after the lock switched away from it, or -1. */
+    public int getJustKilledTargetId() {
+        return justKilledTargetId;
+    }
+
+    /**
+     * Whether hits on this entity drive the ring's feedback: the locked target,
+     * or one killed this tick that Switch Target on Kill already moved away from.
+     */
+    public boolean isFeedbackTarget(int entityId) {
+        return entityId >= 0
+            && (entityId == getFeedbackTargetId() || entityId == justKilledTargetId);
     }
 
     public Entity getCurrentTarget() {

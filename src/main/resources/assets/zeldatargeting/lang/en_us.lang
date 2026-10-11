@@ -4,11 +4,16 @@ key.zeldatargeting.lockon_toggle=Toggle Lock-On
 key.zeldatargeting.cycle_left=Cycle Target Left
 key.zeldatargeting.cycle_right=Cycle Target Right
 key.zeldatargeting.camera_free_look=Camera Free Look
+key.zeldatargeting.cycle_aim_point=Cycle Aim Point
 
 # Messages
 zeldatargeting.target.locked=Target Locked: %s
 zeldatargeting.target.lost=Target Lost
 zeldatargeting.target.switched=Target Switched: %s
+zeldatargeting.message.riding_blocked=Lock-on is off while riding
+zeldatargeting.message.aim_point.head=Aiming at: Head
+zeldatargeting.message.aim_point.center=Aiming at: Body
+zeldatargeting.message.aim_point.lower_body=Aiming at: Feet
 
 # Enhanced Visual Feedback
 config.zeldatargeting.showDamagePrediction=Show damage prediction when targeting entities

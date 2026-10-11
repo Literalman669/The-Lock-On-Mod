@@ -28,6 +28,7 @@ public final class TargetingConfig {
     public static String targetPriority = "nearest";
     public static boolean syncTargetingRangeWithReach = false;
     public static boolean disableLockOnWhenRiding = true;
+    public static boolean quickSwitchOnKill = true;
 
     // HUD and visual settings
     public static boolean showReticle = true;
@@ -50,6 +51,7 @@ public final class TargetingConfig {
     public static float maxYawAdjustment = 90.0f;
     public static boolean enableCameraLockOn = true;
     public static boolean autoThirdPerson = false;
+    public static boolean recenterWithoutTarget = true;
     public static boolean ssrCompensationEnabled = true;
     public static float cameraFocusYOffset = 0.0f;
     public static String lockOnPreset = "balanced";
@@ -86,6 +88,7 @@ public final class TargetingConfig {
     public static float damageNumbersScale = 1.0f;
     public static int damageNumbersDuration = 60;
     public static boolean damageNumbersCrits = true;
+    public static boolean damageNumbersOwnHitsOnly = false;
     public static boolean damageNumbersColors = true;
     public static int damageNumbersColor = 0xFFFFFF;
     public static int criticalDamageColor = 0xFFFF00;

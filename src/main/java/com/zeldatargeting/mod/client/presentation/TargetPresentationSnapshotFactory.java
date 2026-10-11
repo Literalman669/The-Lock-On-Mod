@@ -12,9 +12,18 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.boss.EntityDragon;
 import net.minecraft.entity.boss.EntityWither;
+import net.minecraft.world.World;
 
 public final class TargetPresentationSnapshotFactory {
     private final Minecraft minecraft;
+    // The HUD and the ring each build a snapshot every frame; the combat estimates
+    // only change between game ticks, so they are computed once per tick and target.
+    private World cachedWorld;
+    private long cachedWorldTime = Long.MIN_VALUE;
+    private int cachedTargetId = Integer.MIN_VALUE;
+    private float cachedPredictedDamage;
+    private int cachedHitsToKill;
+    private String cachedVulnerabilityText = "";
 
     public TargetPresentationSnapshotFactory() {
         this(Minecraft.getMinecraft());
@@ -44,10 +53,10 @@ public final class TargetPresentationSnapshotFactory {
         float health = finiteOr(target.getHealth(), 0.0F);
         float maxHealth = Math.max(1.0F, finiteOr(target.getMaxHealth(), 1.0F));
         float healthRatio = Math.max(0.0F, Math.min(1.0F, health / maxHealth));
-        int hitsToKill = DamageCalculator.calculateHitsToKill(target);
-        float predictedDamage = DamageCalculator.calculateDamage(target);
-        String vulnerabilityText = TargetingConfig.showVulnerabilities
-            ? DamageCalculator.getVulnerabilityText(target) : "";
+        refreshCombatEstimates(target, health);
+        int hitsToKill = cachedHitsToKill;
+        float predictedDamage = cachedPredictedDamage;
+        String vulnerabilityText = TargetingConfig.showVulnerabilities ? cachedVulnerabilityText : "";
         boolean occluded = lock.getPhase() == LockPhase.OCCLUDED_GRACE || !observation.isVisible();
         PresentationStatus status = PresentationStatusResolver.resolve(
             healthRatio,
@@ -75,6 +84,22 @@ public final class TargetPresentationSnapshotFactory {
             lock.getPhase(),
             status
         );
+    }
+
+    private void refreshCombatEstimates(EntityLivingBase target, float health) {
+        World world = minecraft.world;
+        long worldTime = world.getTotalWorldTime();
+        if (world == cachedWorld
+                && worldTime == cachedWorldTime
+                && target.getEntityId() == cachedTargetId) {
+            return;
+        }
+        cachedWorld = world;
+        cachedWorldTime = worldTime;
+        cachedTargetId = target.getEntityId();
+        cachedPredictedDamage = DamageCalculator.calculateDamage(target);
+        cachedHitsToKill = DamageCalculator.hitsToKill(health, cachedPredictedDamage);
+        cachedVulnerabilityText = DamageCalculator.getVulnerabilityText(target);
     }
 
     private static double interpolate(double previous, double current, float partialTicks) {

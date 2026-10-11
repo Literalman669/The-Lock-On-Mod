@@ -1,6 +1,7 @@
 package com.zeldatargeting.mod.client.presentation.render;
 
 import com.zeldatargeting.mod.ZeldaTargetingMod;
+import com.zeldatargeting.mod.client.ClientClock;
 import com.zeldatargeting.mod.client.presentation.TargetPresentationSnapshot;
 import com.zeldatargeting.mod.client.presentation.core.FeedbackEffects;
 import com.zeldatargeting.mod.client.presentation.core.PresentationStatus;
@@ -202,7 +203,7 @@ public final class TargetRingRenderer {
         PresentationStyle style = PresentationStyle.fromConfig();
         float size = style.isReducedMotion()
             ? 0.4F
-            : 0.4F * (0.9F + 0.1F * (float) Math.sin(System.currentTimeMillis() * 0.008D));
+            : 0.4F * (0.9F + 0.1F * (float) Math.sin(ClientClock.nowMillis() * 0.008D));
 
         GlStateManager.pushMatrix();
         try {

@@ -97,6 +97,7 @@ public class GuiTargetingConfig extends GuiScreen {
                 y = this.addControl(ControlSpec.toggle("requireLineOfSight", "Require Line of Sight"), y);
                 y = this.addControl(ControlSpec.choice("targetPriority", "Target Priority", "nearest", "angle", "health", "threat"), y);
                 y = this.addControl(ControlSpec.toggle("disableLockOnWhenRiding", "Disable While Riding"), y);
+                y = this.addControl(ControlSpec.toggle("quickSwitchOnKill", "Switch Target on Kill"), y);
                 y = this.addSection("Eligible Targets", y + 4);
                 y = this.addControl(ControlSpec.toggle("targetHostileMobs", "Target Hostile Mobs"), y);
                 y = this.addControl(ControlSpec.toggle("targetNeutralMobs", "Target Neutral Mobs"), y);
@@ -117,6 +118,7 @@ public class GuiTargetingConfig extends GuiScreen {
                 y = this.addControl(ControlSpec.floatValue("maxYawAdjustment", "Max Yaw", 0.0F, 180.0F, 5.0F), y);
                 y = this.addControl(ControlSpec.floatValue("cameraFocusYOffset", "Focus Y Offset", -1.0F, 1.0F, 0.05F), y);
                 y = this.addControl(ControlSpec.toggle("autoThirdPerson", "Auto Third Person"), y);
+                y = this.addControl(ControlSpec.toggle("recenterWithoutTarget", "Level View Without Target"), y);
                 return this.addControl(ControlSpec.toggle("perModeSmoothingEnabled", "Per-Mode Smoothing"), y);
 
             case HUD:
@@ -180,6 +182,7 @@ public class GuiTargetingConfig extends GuiScreen {
                 y = this.addControl(ControlSpec.floatValue("damagePredictionScale", "Damage Prediction Scale", 0.5F, 2.0F, 0.1F), y);
                 y = this.addSection("Damage Numbers", y + 4);
                 y = this.addControl(ControlSpec.toggle("enableDamageNumbers", "Enable Damage Numbers"), y);
+                y = this.addControl(ControlSpec.toggle("damageNumbersOwnHitsOnly", "Only My Hits"), y);
                 y = this.addControl(ControlSpec.floatValue("damageNumbersScale", "Damage Number Scale", 0.5F, 3.0F, 0.1F), y);
                 y = this.addControl(ControlSpec.integerValue("damageNumbersDuration", "Damage Number Duration", 20, 200, 10), y);
                 y = this.addControl(ControlSpec.toggle("damageNumbersCrits", "Critical Hit Effects"), y);

@@ -19,6 +19,7 @@ public final class TargetingSettingsBridge {
         settings.targetPriority = TargetingConfig.targetPriority;
         settings.syncTargetingRangeWithReach = TargetingConfig.syncTargetingRangeWithReach;
         settings.disableLockOnWhenRiding = TargetingConfig.disableLockOnWhenRiding;
+        settings.quickSwitchOnKill = TargetingConfig.quickSwitchOnKill;
 
         settings.showReticle = TargetingConfig.showReticle;
         settings.showHealthBar = TargetingConfig.showHealthBar;
@@ -39,6 +40,7 @@ public final class TargetingSettingsBridge {
         settings.maxPitchAdjustment = TargetingConfig.maxPitchAdjustment;
         settings.maxYawAdjustment = TargetingConfig.maxYawAdjustment;
         settings.autoThirdPerson = TargetingConfig.autoThirdPerson;
+        settings.recenterWithoutTarget = TargetingConfig.recenterWithoutTarget;
         settings.ssrCompensationEnabled = TargetingConfig.ssrCompensationEnabled;
         settings.cameraFocusYOffset = TargetingConfig.cameraFocusYOffset;
         settings.lockOnPreset = TargetingConfig.lockOnPreset;
@@ -72,6 +74,7 @@ public final class TargetingSettingsBridge {
         settings.damageNumbersScale = TargetingConfig.damageNumbersScale;
         settings.damageNumbersDuration = TargetingConfig.damageNumbersDuration;
         settings.damageNumbersCrits = TargetingConfig.damageNumbersCrits;
+        settings.damageNumbersOwnHitsOnly = TargetingConfig.damageNumbersOwnHitsOnly;
         settings.damageNumbersColors = TargetingConfig.damageNumbersColors;
         settings.damageNumbersColor = TargetingConfig.damageNumbersColor;
         settings.criticalDamageColor = TargetingConfig.criticalDamageColor;
@@ -112,6 +115,7 @@ public final class TargetingSettingsBridge {
         TargetingConfig.targetPriority = settings.targetPriority;
         TargetingConfig.syncTargetingRangeWithReach = settings.syncTargetingRangeWithReach;
         TargetingConfig.disableLockOnWhenRiding = settings.disableLockOnWhenRiding;
+        TargetingConfig.quickSwitchOnKill = settings.quickSwitchOnKill;
 
         TargetingConfig.showReticle = settings.showReticle;
         TargetingConfig.showHealthBar = settings.showHealthBar;
@@ -132,6 +136,7 @@ public final class TargetingSettingsBridge {
         TargetingConfig.maxPitchAdjustment = settings.maxPitchAdjustment;
         TargetingConfig.maxYawAdjustment = settings.maxYawAdjustment;
         TargetingConfig.autoThirdPerson = settings.autoThirdPerson;
+        TargetingConfig.recenterWithoutTarget = settings.recenterWithoutTarget;
         TargetingConfig.ssrCompensationEnabled = settings.ssrCompensationEnabled;
         TargetingConfig.cameraFocusYOffset = settings.cameraFocusYOffset;
         TargetingConfig.lockOnPreset = settings.lockOnPreset;
@@ -165,6 +170,7 @@ public final class TargetingSettingsBridge {
         TargetingConfig.damageNumbersScale = settings.damageNumbersScale;
         TargetingConfig.damageNumbersDuration = settings.damageNumbersDuration;
         TargetingConfig.damageNumbersCrits = settings.damageNumbersCrits;
+        TargetingConfig.damageNumbersOwnHitsOnly = settings.damageNumbersOwnHitsOnly;
         TargetingConfig.damageNumbersColors = settings.damageNumbersColors;
         TargetingConfig.damageNumbersColor = settings.damageNumbersColor;
         TargetingConfig.criticalDamageColor = settings.criticalDamageColor;

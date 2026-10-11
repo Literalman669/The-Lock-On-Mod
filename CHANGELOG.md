@@ -1,9 +1,14 @@
 # Changelog
 
-## Unreleased
+## 1.4.1
 
 ### Added
 
+- Switch Target on Kill (Targeting page, on by default): when the locked target dies, the lock moves to the next eligible target instead of ending.
+- Cycle Aim Point key (V by default) moves the lock between the target's head, body, and feet.
+- Pressing lock with nothing to target now plays a soft click and, with Level View Without Target (Camera page, on by default), eases the view back to the horizon. Pressing lock while riding explains why nothing happened.
+- Only My Hits (Damage Numbers) shows numbers only for your own melee hits.
+- Compatibility Debug Output now also logs where unexpected view turning comes from (`[ZT Mouse]` lines in the log), and each swing during a lock with its aim, distance, speeds, and whether it hit (`[ZT Aim]` lines).
 - Target ring effects: a flash on your critical hits, a shockwave when the target drops to low health, and a burst where it dies. Reduced Motion keeps only the color flash.
 - Entity blacklist, Disable While Riding, and Match Range to Reach, carried over from 1.3.1.
 - Reticle Color for the ring's corner brackets.
@@ -36,6 +41,10 @@
 - The cinematic sound theme can now be selected.
 - Arrow and other projectile damage no longer shows as melee damage in the target panel.
 - Lock-on and camera timing use a steady high-resolution clock, avoiding stutter from coarse system timers.
+- Lock-on sounds use the same steady clock, so a system clock change can no longer mute them.
+- The kill burst still plays when Switch Target on Kill moves the lock in the same moment the target dies.
+- Damage estimates for the target panel and ring are computed once per game tick instead of several times per frame.
+- With Shoulder Surfing Reloaded's Adaptive crosshair and a wide shoulder offset, close targets can be hit again outside Epic Fight's Battle mode. The lock now uses SSR's eye-based crosshair in every mode; SSR's shoulder ray could not reach targets nearer than its sideways offset.
 
 ## 1.4.0
 

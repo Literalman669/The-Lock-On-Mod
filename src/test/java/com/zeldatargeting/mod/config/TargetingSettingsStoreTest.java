@@ -27,6 +27,9 @@ public class TargetingSettingsStoreTest {
         settings.entityBlacklist = "minecraft:iron_golem, iceandfire:";
         settings.disableLockOnWhenRiding = false;
         settings.syncTargetingRangeWithReach = true;
+        settings.quickSwitchOnKill = false;
+        settings.recenterWithoutTarget = false;
+        settings.damageNumbersOwnHitsOnly = true;
 
         store.save(settings);
         TargetingSettingsStore.LoadResult loaded = store.load();
@@ -44,6 +47,9 @@ public class TargetingSettingsStoreTest {
         assertEquals("minecraft:iron_golem, iceandfire:", loaded.getSettings().entityBlacklist);
         assertFalse(loaded.getSettings().disableLockOnWhenRiding);
         assertTrue(loaded.getSettings().syncTargetingRangeWithReach);
+        assertFalse(loaded.getSettings().quickSwitchOnKill);
+        assertFalse(loaded.getSettings().recenterWithoutTarget);
+        assertTrue(loaded.getSettings().damageNumbersOwnHitsOnly);
         assertTrue(fileContents.contains("schemaVersion=4"));
     }
 

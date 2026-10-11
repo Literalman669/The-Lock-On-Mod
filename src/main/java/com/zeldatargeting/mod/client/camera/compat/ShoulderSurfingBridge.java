@@ -194,7 +194,7 @@ public final class ShoulderSurfingBridge {
             registrarType.getMethod("registerAdaptiveItemCallback", callbackType)
                 .invoke(registrar, callback);
             if (logger != null) {
-                logger.info("SSR adaptive crosshair callback registered for Epic Fight lock-on");
+                logger.info("SSR adaptive crosshair callback registered for lock-on");
             }
         } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
             if (logger != null) {

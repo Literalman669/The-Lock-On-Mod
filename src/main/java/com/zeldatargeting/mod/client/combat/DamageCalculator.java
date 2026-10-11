@@ -47,14 +47,15 @@ public class DamageCalculator {
         }
         
         EntityLivingBase living = (EntityLivingBase) target;
-        float damage = calculateDamage(target);
-        
+        return hitsToKill(living.getHealth(), calculateDamage(target));
+    }
+
+    /** Hits needed to bring {@code health} to zero, or -1 when the damage cannot kill. */
+    public static int hitsToKill(float health, float damage) {
         if (damage <= 0) {
             return -1; // Can't kill with 0 damage
         }
-        
-        float targetHealth = living.getHealth();
-        return (int) Math.ceil(targetHealth / damage);
+        return (int) Math.ceil(health / damage);
     }
     
     private static float calculateWeaponDamage(EntityPlayer player, EntityLivingBase target, ItemStack weapon) {

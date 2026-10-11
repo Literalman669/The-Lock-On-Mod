@@ -26,6 +26,7 @@ The default key bindings are available from Minecraft's Controls menu under Zeld
 - **R** acquires or releases a target.
 - **Z** and **X** cycle between eligible targets.
 - **Left Alt** temporarily enables free look.
+- **V** moves the lock between the target's head, body, and feet.
 
 ## Configuration
 
@@ -47,8 +48,12 @@ Preset choices are previewed first. Choose **Save** to keep the preview, **Cance
 
 - **Entity Blacklist** (Targeting page) lists entities that are never targeted, separated by commas. `minecraft:iron_golem` blocks one mob, `iceandfire:` blocks every mob from that mod, and a plain word such as `golem` blocks any mob whose name contains it.
 - **Disable While Riding** (on by default) blocks lock-on while you ride a horse, boat, or other mount, and releases an existing lock when you mount.
+- **Switch Target on Kill** (on by default) moves the lock to the next eligible target when the current one dies.
+- **Level View Without Target** (Camera page, on by default) eases your view back to the horizon when you press lock and nothing is in range, like Zelda's camera re-center.
 - **Match Range to Reach** (off by default) replaces the targeting range with your melee reach: 3 blocks in survival, 6 in creative, plus any extra reach other mods grant.
 - **Target Check Interval** and **Filter Check Interval** set how often, in ticks, a lock re-checks line of sight and range, and whether the target still passes your filters. Higher values save work but react more slowly.
+
+**Only My Hits** (Accessibility page, under Damage Numbers) limits damage numbers to your own melee hits. Arrows and other projectiles are not counted.
 
 ### Target ring feedback
 
@@ -56,9 +61,9 @@ While locked on, the ring reacts to the fight: it flashes and pops on your criti
 
 ## Compatibility
 
-Vanilla first and third person are the automatic fallback. Shoulder Surfing Reloaded 2.9.x is optional: Zelda Targeting keeps SSR's chosen shoulder side and camera offset while locked. With SSR's static crosshair, it aligns lock-on aim with the shifted attack ray; with SSR's dynamic crosshair, it uses the normal eye ray. Zelda Targeting does not change SSR's offsets or saved configuration. The Compatibility page can turn off shoulder-aware aim alignment.
+Vanilla first and third person are the automatic fallback. Shoulder Surfing Reloaded 2.9.x is optional: Zelda Targeting keeps SSR's chosen shoulder side and camera offset while locked. With SSR's default **Adaptive** crosshair, Zelda Targeting asks SSR for its dynamic, eye-based crosshair for as long as a lock lasts, so every target in reach can be hit whatever the shoulder offset; the crosshair returns to normal when the lock ends. With SSR's dynamic crosshair, it uses the normal eye ray. A user-selected **Static** crosshair starts its attack ray at the shoulder camera, so it cannot reach targets closer than the camera's sideways offset (about 2.5 blocks with a wide offset); Zelda Targeting aligns the aim as closely as that ray allows. Zelda Targeting does not change SSR's offsets or saved configuration. The Compatibility page can turn off shoulder-aware aim alignment.
 
-Epic Fight 2.2.8 is optional. In its Battle mode with SSR active, Zelda Targeting faces the player's body and Epic Fight's melee attacks toward the target. If SSR's crosshair is set to its default **Adaptive** mode, Zelda Targeting temporarily requests SSR's dynamic crosshair during the lock so the crosshair and Epic Fight's attack direction agree. The chosen shoulder view remains in place, and SSR's saved crosshair setting is untouched. SSR's **Dynamic** mode also works; a user-selected **Static** mode keeps its static crosshair position while Epic Fight's melee attacks face the target.
+Epic Fight 2.2.8 is optional. In its Battle mode with SSR active, Zelda Targeting faces the player's body and Epic Fight's melee attacks toward the target. With SSR's default **Adaptive** crosshair, the lock's dynamic crosshair (see above) keeps the crosshair and Epic Fight's attack direction in agreement. The chosen shoulder view remains in place, and SSR's saved crosshair setting is untouched. SSR's **Dynamic** mode also works; a user-selected **Static** mode keeps its static crosshair position while Epic Fight's melee attacks face the target.
 
 Epic Fight and Zelda Targeting both use **R** by default. Rebind either **Toggle Battle/Mining Mode** or **Acquire/Release Target** in Minecraft's Controls menu when using both mods.
 

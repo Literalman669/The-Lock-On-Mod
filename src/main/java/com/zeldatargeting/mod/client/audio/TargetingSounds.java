@@ -1,5 +1,6 @@
 package com.zeldatargeting.mod.client.audio;
 
+import com.zeldatargeting.mod.client.ClientClock;
 import com.zeldatargeting.mod.client.combat.DamageCalculator;
 import com.zeldatargeting.mod.config.TargetingConfig;
 import net.minecraft.client.Minecraft;
@@ -19,12 +20,16 @@ public class TargetingSounds {
     // Sound variety counter for cycling through different sounds
     private static int soundVarietyCounter = 0;
 
-    // Per-event cooldowns to prevent sound stacking on rapid retargeting (ms)
+    // Per-event cooldowns to prevent sound stacking on rapid retargeting (ms). Times
+    // come from the monotonic ClientClock, whose origin is arbitrary, so "never
+    // played" needs its own marker rather than 0.
     private static final long SOUND_COOLDOWN_MS = 150;
-    private static long lastLockSoundTime   = 0;
-    private static long lastSwitchSoundTime = 0;
-    private static long lastLethalSoundTime = 0;
-    private static long lastLostSoundTime   = 0;
+    private static final long NEVER_PLAYED = Long.MIN_VALUE;
+    private static long lastLockSoundTime   = NEVER_PLAYED;
+    private static long lastSwitchSoundTime = NEVER_PLAYED;
+    private static long lastLethalSoundTime = NEVER_PLAYED;
+    private static long lastLostSoundTime   = NEVER_PLAYED;
+    private static long lastNoTargetSoundTime = NEVER_PLAYED;
     
     // Default theme sounds
     private static final SoundEvent[] DEFAULT_TARGET_LOCK_SOUNDS = {
@@ -104,8 +109,8 @@ public class TargetingSounds {
         if (!TargetingConfig.enableSounds || !TargetingConfig.enableTargetLockSound) {
             return;
         }
-        long now = System.currentTimeMillis();
-        if (now - lastLockSoundTime < SOUND_COOLDOWN_MS) return;
+        long now = ClientClock.nowMillis();
+        if (!cooldownElapsed(lastLockSoundTime, now)) return;
         lastLockSoundTime = now;
         
         // Check if this is a lethal target for special sound
@@ -133,8 +138,8 @@ public class TargetingSounds {
         if (!TargetingConfig.enableSounds || !TargetingConfig.enableTargetSwitchSound) {
             return;
         }
-        long now = System.currentTimeMillis();
-        if (now - lastSwitchSoundTime < SOUND_COOLDOWN_MS) return;
+        long now = ClientClock.nowMillis();
+        if (!cooldownElapsed(lastSwitchSoundTime, now)) return;
         lastSwitchSoundTime = now;
         
         SoundEvent sound = getTargetSwitchSound();
@@ -152,8 +157,8 @@ public class TargetingSounds {
         if (!TargetingConfig.enableSounds || !TargetingConfig.enableLethalTargetSound) {
             return;
         }
-        long now = System.currentTimeMillis();
-        if (now - lastLethalSoundTime < SOUND_COOLDOWN_MS) return;
+        long now = ClientClock.nowMillis();
+        if (!cooldownElapsed(lastLethalSoundTime, now)) return;
         lastLethalSoundTime = now;
         
         SoundEvent sound = getLethalTargetSound();
@@ -171,18 +176,39 @@ public class TargetingSounds {
         if (!TargetingConfig.enableSounds || !TargetingConfig.enableTargetLostSound) {
             return;
         }
-        long now = System.currentTimeMillis();
-        if (now - lastLostSoundTime < SOUND_COOLDOWN_MS) return;
+        long now = ClientClock.nowMillis();
+        if (!cooldownElapsed(lastLostSoundTime, now)) return;
         lastLostSoundTime = now;
         
         SoundEvent sound = getTargetLostSound();
         float volume = TargetingConfig.soundVolume * TargetingConfig.targetLostVolume;
         float pitch = TargetingConfig.targetLostPitch;
-        
+
         mc.world.playSound(mc.player, mc.player.getPosition(),
             sound, SoundCategory.PLAYERS, volume, pitch);
     }
-    
+
+    /**
+     * Play a quiet, low click when the lock key finds nothing to lock onto,
+     * so the key press is never silently ignored.
+     */
+    public static void playNoTargetSound() {
+        if (!TargetingConfig.enableSounds || mc.world == null || mc.player == null) {
+            return;
+        }
+        long now = ClientClock.nowMillis();
+        if (!cooldownElapsed(lastNoTargetSoundTime, now)) return;
+        lastNoTargetSoundTime = now;
+
+        mc.world.playSound(mc.player, mc.player.getPosition(),
+            SoundEvents.UI_BUTTON_CLICK, SoundCategory.PLAYERS,
+            TargetingConfig.soundVolume * 0.25F, 0.6F);
+    }
+
+    private static boolean cooldownElapsed(long lastPlayedMillis, long nowMillis) {
+        return lastPlayedMillis == NEVER_PLAYED || nowMillis - lastPlayedMillis >= SOUND_COOLDOWN_MS;
+    }
+
     /**
      * Get target lock sound based on theme and variety settings
      */
